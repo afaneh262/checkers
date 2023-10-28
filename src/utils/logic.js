@@ -1,113 +1,78 @@
-export const NUMBER_OF_ROWS = 8;
-export const NUMBER_OF_COLUMNS = 8;
+import {
+    NUMBER_OF_ROWS,
+    NUMBER_OF_COLUMNS,
+    MovementDirection,
+} from './constants';
 
-export const MovementDirection = {
-    Upwards: 0,
-    Downwards: 1
-};
+export function checkIfWon(boardMatrix, players) {
+    return players.every(player => boardMatrix.some(boardRow => boardRow.some(piece => piece.owner === player)));
+}
 
-export const PLAYER1 = {
-    id: 'Red',
-    color: '#c92735',
-    direction: MovementDirection.Upwards
-};
-
-export const PLAYER2 = {
-    id: 'Black',
-    color: '#403f3f',
-    direction: MovementDirection.Downwards
-};
-
-export const GameState = {
-    PieceSelect: 0,
-    PossibleMovement: 1,
-    Won: 2
-};
-
-export const checkIfWon = (boardMatrix, players) => {
-    for (const player of players) {
-        if (!boardMatrix.some((boardRow) => boardRow.some((piece) => piece.owner === player))) {
-            return true;
-        }
-    }
-    return false;
-};
-
-export const nextTurnOwner = (currentTurnOwner, players) => {
+export function nextTurnOwner(currentTurnOwner, players) {
     const index = players.indexOf(currentTurnOwner);
-    return players[index + 1 >= players.length ? 0 : index + 1];
-};
+    return players[(index + 1) % players.length];
+}
 
-export const movePiece = (boardMatrix, selectedMovement, currentPiece) => {
-    boardMatrix[selectedMovement.coordinates.row][selectedMovement.coordinates.col].owner = currentPiece.owner;
-    boardMatrix[selectedMovement.coordinates.row][selectedMovement.coordinates.col].king =
-        selectedMovement.coordinates.row === 0 || selectedMovement.coordinates.row === NUMBER_OF_ROWS - 1 ? true : currentPiece.king;
+export function movePiece(boardMatrix, { coordinates: { row, col } }, currentPiece) {
+    const newRow = row;
+    boardMatrix[newRow][col] = { ...boardMatrix[newRow][col], owner: currentPiece.owner, king: (newRow === 0 || newRow === NUMBER_OF_ROWS - 1) ? true : currentPiece.king };
     boardMatrix[currentPiece.coordinates.row][currentPiece.coordinates.col].owner = undefined;
     boardMatrix[currentPiece.coordinates.row][currentPiece.coordinates.col].king = false;
     return boardMatrix;
-};
+}
 
-export const hasKillablePieces = (boardMatrix) => {
-    return boardMatrix.some((boardRow) => boardRow.some((piece) => Boolean(piece.killableByMovement)));
-};
+export function hasKillablePieces(boardMatrix) {
+    return boardMatrix.some(boardRow => boardRow.some(({ killableByMovement }) => killableByMovement));
+}
 
-export const killPieceFn = (boardMatrix, selectedPiece) => {
-    const killed = boardMatrix.some((boardRow) =>
-        boardRow.some((piece) => piece.killableByMovement === selectedPiece.coordinates)
-    );
-    boardMatrix = boardMatrix.map((boardRow) =>
-        boardRow.map((piece) => {
+export function killPieceFn(boardMatrix, selectedPiece) {
+    let killed = false;
+    boardMatrix = boardMatrix.map(boardRow =>
+        boardRow.map(piece => {
             if (piece.killableByMovement === selectedPiece.coordinates) {
-                piece.owner = undefined;
-                piece.selectable = false;
-                piece.king = false;
-                piece.killableByMovement = undefined;
+                const { killableByMovement, ...updatedPiece } = piece;
+                boardMatrix[selectedPiece.coordinates.row][selectedPiece.coordinates.col] = updatedPiece;
+                killed = true;
             }
             return piece;
         })
     );
     return { boardMatrix, killed };
-};
+}
 
-export const clearHighlights = (boardMatrix) => {
-    return boardMatrix.map((boardRow) =>
-        boardRow.map((piece) => {
-            piece.selectable = false;
-            piece.killableByMovement = undefined;
-            return piece;
-        })
+export function clearHighlights(boardMatrix) {
+    return boardMatrix.map(boardRow =>
+        boardRow.map(piece => ({
+            ...piece,
+            selectable: false,
+            killableByMovement: undefined
+        }))
     );
-};
+}
 
-export const highlightPlayer = (boardMatrix, player) => {
-    const newBoardMatrix = boardMatrix.map((boardRow) =>
-        boardRow.map((piece) => {
-            if (piece.owner === player) {
-                piece.selectable = true;
-            } else {
-                piece.selectable = false;
-            }
-            return piece;
-        })
+export function highlightPlayer(boardMatrix, player) {
+    return boardMatrix.map(boardRow =>
+        boardRow.map(piece => ({
+            ...piece,
+            selectable: piece.owner === player
+        }))
     );
-    return newBoardMatrix;
-};
+}
 
-export const highlightPossibleMovement = (boardMatrix, piece, onlyKillable) => {
+export function highlightPossibleMovement(boardMatrix, piece, onlyKillable) {
     if (piece.owner) {
         if (piece.king) {
             boardMatrix = highlightMovement(boardMatrix, piece, onlyKillable, true);
             boardMatrix = highlightMovement(boardMatrix, piece, onlyKillable, false);
-        } else if (piece.owner.direction === MovementDirection.Upwards) {
-            boardMatrix = highlightMovement(boardMatrix, piece, onlyKillable, true);
         } else {
-            boardMatrix = highlightMovement(boardMatrix, piece, onlyKillable, false);
+            const direction = piece.owner.direction === MovementDirection.Upwards;
+            boardMatrix = highlightMovement(boardMatrix, piece, onlyKillable, direction);
         }
     }
     return boardMatrix;
-};
+}
 
-export const highlightMovement = (boardMatrix, piece, onlyKillable, upwards) => {
+export function highlightMovement(boardMatrix, piece, onlyKillable, upwards) {
     const nextRow = upwards ? piece.coordinates.row - 1 : piece.coordinates.row + 1;
     const checkNext = upwards ? nextRow >= 0 : nextRow < boardMatrix.length;
     const nextNextRow = upwards ? piece.coordinates.row - 2 : piece.coordinates.row + 2;
@@ -143,86 +108,31 @@ export const highlightMovement = (boardMatrix, piece, onlyKillable, upwards) => 
         onlyKillable
     );
     return boardMatrix;
-};
+}
 
-export const highlightNextNodes = (
-    boardMatrix,
-    piece,
-    nextRow,
-    nextCol,
-    checkNext,
-    nextNextRow,
-    nextNextCol,
-    checkNextNext,
-    onlyKillable
-) => {
-    if (piece.owner) {
-        if (checkNext) {
-            const nextNode = boardMatrix[nextRow][nextCol].owner;
-            if (!nextNode) {
-                if (!onlyKillable) {
-                    boardMatrix[nextRow][nextCol].selectable = true;
-                }
-            } else if (nextNode.id !== piece.owner.id) {
-                if (checkNextNext) {
-                    if (!boardMatrix[nextNextRow][nextNextCol].owner) {
-                        boardMatrix[nextRow][nextCol].killableByMovement = boardMatrix[nextNextRow][nextNextCol].coordinates;
-                        boardMatrix[nextNextRow][nextNextCol].selectable = true;
-                    }
-                }
-            }
-        }
-    }
+export function mountBoardMatrix(player1, player2) {
+    const boardMatrix = Array.from({ length: NUMBER_OF_ROWS }, (_, row) =>
+        Array.from({ length: NUMBER_OF_COLUMNS }, (_, col) => {
+            const isRowInRange = row < 3 || row > NUMBER_OF_ROWS - 4;
+            const isOddRow = row % 2 === 1;
+            const isOddColumn = col % 2 === 1;
+            const isPiecePosition = isRowInRange && (isOddRow !== isOddColumn);
+            const player = isPiecePosition ? (row < 3 ? player2 : player1) : undefined;
+            return constructPiece(row, col, player);
+        })
+    );
     return boardMatrix;
-};
+}
 
-export const mountBoardMatrix = (player1, player2) => {
-    const boardMatrix = [];
-    for (let i = 0; i < NUMBER_OF_ROWS; i++) {
-        const boardRow = [];
-        for (let j = 0; j < NUMBER_OF_COLUMNS; j++) {
-            if (
-                i < 3 &&
-                ((!isOdd(i) && isOdd(j)) || (isOdd(i) && !isOdd(j)))
-            ) {
-                boardRow.push(constructPiece(i, j, player2));
-            } else if (
-                i > NUMBER_OF_ROWS - 4 &&
-                ((!isOdd(i) && isOdd(j)) || (isOdd(i) && !isOdd(j)))
-            ) {
-                boardRow.push(constructPiece(i, j, player1));
-            } else {
-                boardRow.push(constructPiece(i, j));
-            }
-        }
-        boardMatrix.push(boardRow);
-    }
-    return boardMatrix;
-};
+export function constructPiece(row, col, player) {
+    return {
+        owner: player,
+        coordinates: { row, col },
+        selectable: false,
+        king: false,
+    };
+}
 
-export const constructPiece = (row, col, player) => {
-    if (player) {
-        return {
-            owner: player,
-            coordinates: {
-                row,
-                col
-            },
-            selectable: false,
-            king: false
-        };
-    } else {
-        return {
-            coordinates: {
-                row,
-                col
-            },
-            selectable: false,
-            king: false
-        };
-    }
-};
-
-export const isOdd = (value) => {
-    return value % 2 ? true : false;
-};
+export function isOdd(value) {
+    return value % 2 === 1;
+}

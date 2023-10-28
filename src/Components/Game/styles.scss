@@ -1,0 +1,63 @@
+.Board {
+    width: 800px;
+    margin: 100px auto;
+    
+    .Row {
+        display: flex;
+
+        &:nth-child(2n + 1) .Square:nth-child(2n + 1) {
+            background-color: rgb(255, 222, 152);
+        }
+        
+        &:nth-child(2n) .Square:nth-child(2n) {
+            background-color: rgb(255, 222, 152);
+        }
+    }
+    
+
+    .Square {
+        height: 60px;
+        width: 60px;
+        background-color: rgb(153, 89, 49);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .Piece {
+        height: 30px;
+        width: 30px;
+        border-radius: 50%;
+        transition-duration: 0.15s;
+        box-shadow: rgb(107, 63, 31) 2px 2px;
+        background-color: rgb(64, 63, 63);
+        border-color: white;
+        border-style: solid;
+        border-width: 2px;
+
+        &[owner="player1"] {
+            background-color: red;
+        }
+
+        &.IsMovable {
+            cursor: pointer;
+            border-color: gold;
+        }
+
+        &.IsSelected {
+            cursor: pointer;
+            border-color: red;
+        }
+    }
+
+    .PossibleMove {
+        height: 30px;
+        width: 30px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.5);
+        cursor: pointer;
+        border-color: rgba(255, 255, 255, 0.6);
+        border-style: solid;
+        border-width: 2px;
+    }
+}
