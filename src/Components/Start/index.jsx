@@ -1,40 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { useReducer } from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
+
+import {
+    Levels,
+    PlayerTypes,
+    PlayersColors,
+    PlayersNames,
+    Players,
+    InitalPlayerToStart
+} from './../../constants';
 
 import './styles.scss';
 
-const players = ['Player 1', 'Player 2'];
-const playerTypes = ['human', 'ai'];
-const levels = ['easy', 'medium', 'hard'];
+
 const Start = ({ onStart }) => {
-    const [selectedLevel, setSelectedLevel] = useState(levels[1]);
-    const [selectedPlayers, setSelectedPlayers] = useState(['human', 'ai']);
+    const [selectedLevel, setSelectedLevel] = useState(Levels.Medium);
+    const [selectedPlayers, setSelectedPlayers] = useState([PlayerTypes.Human, PlayerTypes.Ai]);
 
     return (
         <div className="Start">
             <div className="PlayerChoice">
                 <div className="PlayerChoice__Title">Chose Player</div>
                 <div className="PlayerChoice__List">
-                    {players.map((entry, playerIndex) => {
+                    {Object.keys(Players).map((entry, playerIndex) => {
                         return (
                             <div className="PlayerList">
-                                <div className="PlayerList__Title">{entry}</div>
+                                <div className="PlayerList__Title">{PlayersNames[Players[entry]]}</div>
                                 <div className="PlayerList__Types">
-                                    {playerTypes.map((type) => {
+                                    {Object.keys(PlayerTypes).map((type) => {
                                         return (
                                             <div
                                                 className="PlayerList__Type"
                                                 onClick={() => {
                                                     const players = [...selectedPlayers];
-                                                    players[playerIndex] = type;
+                                                    players[playerIndex] = PlayerTypes[type];
                                                     setSelectedPlayers(players);
                                                 }}
                                             >
                                                 <div
                                                     className={clsx('PlayerList__Types__Check', {
                                                         IsSelected:
-                                                            selectedPlayers[playerIndex] === type,
+                                                            selectedPlayers[playerIndex] === PlayerTypes[type],
                                                     })}
                                                 ></div>
                                                 <div className="PlayerList__Types__Name">
@@ -49,29 +55,47 @@ const Start = ({ onStart }) => {
                     })}
                 </div>
             </div>
-            <div className="Level">
-                <div className="Level__Title">Chose the level</div>
-                <div className="Level__Choices">
-                    {levels.map((type) => {
-                        return (
-                            <div
-                                className={clsx('Level', { IsSelected: selectedLevel === type })}
-                                onClick={() => {
-                                    setSelectedLevel(type);
-                                }}
-                            >
-                                {type}
-                            </div>
-                        );
-                    })}
+            {!(selectedPlayers[0] === PlayerTypes.Human && selectedPlayers[1] === PlayerTypes.Human) && (
+                <div className="Level">
+                    <div className="Level__Title">Chose the level</div>
+                    <div className="Level__Choices">
+                        {Object.keys(Levels).map((type) => {
+                            return (
+                                <div
+                                    className={clsx('Level', {
+                                        IsSelected: selectedLevel === Levels[type],
+                                    })}
+                                    onClick={() => {
+                                        setSelectedLevel(Levels[type]);
+                                    }}
+                                >
+                                    {type}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
+            )}
             <button
                 className="StartBtn"
                 onClick={() => {
                     onStart({
                         level: selectedLevel,
-                        players: selectedPlayers,
+                        players: {
+                            [Players.Player1]: {
+                                id: Players.Player1,
+                                type: selectedPlayers[0],
+                                name: PlayersNames[Players.Player1],
+                                color: PlayersColors[Players.Player1]
+                            },
+                            [Players.Player2]: {
+                                id: Players.Player2,
+                                type: selectedPlayers[1],
+                                name: PlayersNames[Players.Player2],
+                                color: PlayersColors[Players.Player2]
+                            },
+                        },
+                        initalPlayerToStart: InitalPlayerToStart
                     });
                 }}
             >

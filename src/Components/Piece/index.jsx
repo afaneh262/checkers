@@ -2,9 +2,8 @@ import clsx from 'clsx';
 
 import './styles.scss';
 import kingIcon from './crown.svg';
-import { PlayersColors, PlayersNames } from '../../utils';
 
-const Piece = ({ piece, onClick }) => {
+const Piece = ({ piece, handleClick }) => {
     const renderSquareContent = (piece) => {
         if (piece.owner) {
             return (
@@ -15,14 +14,11 @@ const Piece = ({ piece, onClick }) => {
                     })}
                     onClick={() => {
                         if (piece.isMovable) {
-                            onClick({
-                                type: 'selectPiece',
-                                selectedPiece: piece,
-                            });
+                            handleClick('selectPiece', piece);
                         }
                     }}
                     style={{
-                        backgroundColor: PlayersColors[piece.owner],
+                        backgroundColor: piece.owner.color,
                     }}
                 >
                     {piece.isKing ? (
@@ -39,10 +35,7 @@ const Piece = ({ piece, onClick }) => {
                 <div
                     className={clsx('PossibleMove')}
                     onClick={() => {
-                        onClick({
-                            type: 'movePiece',
-                            newPosition: piece.coordinates,
-                        });
+                        handleClick('movePiece', piece);
                     }}
                 />
             );

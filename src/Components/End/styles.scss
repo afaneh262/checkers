@@ -1,0 +1,94 @@
+.Start {
+    padding: 50px;
+    background-color: cadetblue;
+    border-radius: 15px;
+
+    .Level {
+        margin-bottom: 15px;
+
+        .Level__Title {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .Level__Choices {
+            display: flex;
+
+            .Level {
+                background-color: #fff;
+                padding: 5px 10px;
+                cursor: pointer;
+                text-transform: uppercase;
+                font-size: 12px;
+                font-weight: 700;
+
+                &:first-child {
+                    border-radius: 15px 0 0 15px;
+                }
+
+                &:last-child {
+                    border-radius: 0 15px 15px 0;
+                }
+
+                &.IsSelected {
+                    background: #000;
+                    color: #fff;
+                }
+            }
+        }
+    }
+
+    .PlayerChoice {
+        margin-bottom: 15px;
+
+        .PlayerChoice__Title {
+            font-size: 18px;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .PlayerChoice__List {
+            display: flex;
+
+            >div:first-child {
+                margin-right: 50px;
+            }
+
+            .PlayerList {
+                .PlayerList__Title {
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #fff;
+                    margin-bottom: 5px;
+                }
+
+                .PlayerList__Type {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 5px;
+                    text-transform: uppercase;
+                    cursor: pointer;
+                    .PlayerList__Types__Check {
+                        width: 20px;
+                        height: 20px;
+                        background: #fff;
+                        border: 3px dashed #000;
+                        margin-right: 5px;
+
+                        &.IsSelected {
+                            border: 3px solid #fff;
+                            background: #000;
+                        }
+                    }
+
+                    .PlayerList__Types__Name {
+                        font-size: 14px;
+                        color: #fff;
+                    }
+                }
+            }
+        }
+    }
+    
+}

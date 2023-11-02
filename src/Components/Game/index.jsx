@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useReducer } from 'react';
-import clsx from 'clsx';
+import { clone, cloneDeep } from 'lodash';
 
+import { PlayerTypes, Players } from '../../constants';
 import {
-    getPlayerPieces,
+    selectGamePiece,
+    moveGamePiece,
+    playAi,
     buildInitialBoard,
-    updateBoardOnPieceMove,
-    addExtrasToBoard,
-    findMovablePieces,
-    initalPlayerToStart,
-    Players,
+    highlighBoard
 } from './../../utils';
 
 import PlayerWidget from '../PlayerWidget';
@@ -17,74 +15,64 @@ import Piece from '../Piece';
 
 import './styles.scss';
 
-function gameReducer(game, action) {
-    switch (action.type) {
-        case 'selectPiece': {
-            return {
-                ...game,
-                board: addExtrasToBoard(game.board, game.turn, action.selectedPiece),
-                turn: game.turn,
-                selectedPiece: action.selectedPiece,
-            };
-        }
-        case 'movePiece': {
-            const newTurn = game.turn === Players.Player1 ? Players.Player2 : Players.Player1;
-            const { board, killedPieces } = updateBoardOnPieceMove(
-                game.board,
-                game.selectedPiece.coordinates,
-                action.newPosition,
-            );
-            let updatedKilledPieces = game.killedPieces ? [...game.killedPieces] : [];
-            updatedKilledPieces = updatedKilledPieces.concat(killedPieces);
-            let winner = null;
-            let isEnd = false;
-            const nextTurnMovablePieces = findMovablePieces(board, newTurn);
-            if (nextTurnMovablePieces.length === 0) {
-                isEnd = true;
+const buildGameState = (gameConfig) => {
+    const {
+        level,
+        players,
+        initalPlayerToStart
+    } = gameConfig;
 
-                //find winner
-                const player1Pieces = getPlayerPieces(board, Players.Player1);
-                const player2Pieces = getPlayerPieces(board, Players.Player2);
-                if (player1Pieces.length === 0) {
-                    winner = Players.Player2;
-                } else if (player2Pieces.length === 0) {
-                    winner = Players.Player1;
-                } else {
-                    winner = 'draw';
-                }
-            }
-
-            return {
-                ...game,
-                board: addExtrasToBoard(board, newTurn, null),
-                turn: newTurn,
-                selectedPiece: null,
-                killedPieces: updatedKilledPieces,
-                isEnd: isEnd,
-                winner: winner,
-            };
-        }
-        default: {
-            throw Error('Unknown action: ' + action.type);
-        }
-    }
-}
-
-const initialGameState = {
-    board: addExtrasToBoard(buildInitialBoard(), initalPlayerToStart, null),
-    turn: initalPlayerToStart,
-    selectedPiece: null,
-    killedPieces: [],
+    let board = buildInitialBoard(players);
+    board = highlighBoard(board, initalPlayerToStart);
+    return {
+        board,
+        isEnd: false,
+        turn: initalPlayerToStart,
+        players,
+        level,
+        selectedPiece: null,
+        killedPieces: []
+    };
 };
 
-const Game = ({ gameConfig, onStartNewGame }) => {
-    const [game, dispatch] = useReducer(gameReducer, initialGameState);
+const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
+    const [game, setGame] = useState(buildGameState(gameConfig));
+    useEffect(() => {
+        const init = async () => {
+            const newGame = await playAi(cloneDeep(game));
+            setGame(newGame);
+        }
+
+        if(game.players[game.turn].type === PlayerTypes.Ai) {
+            init();
+        }
+    }, [game.turn]);
+
+    useEffect(() => {
+        if(game.isEnd) {
+            onGameEnded(game);
+        }
+    }, [game.isEnd]);
+
+    const onSelectPiece = (piece) => {
+        const newGame = selectGamePiece(cloneDeep(game), piece);
+        setGame(newGame);
+    };
+
+    const onMovePiece = (piece) => {
+        const newGame = moveGamePiece(cloneDeep(game), piece);
+        setGame(newGame);
+    };
 
     return (
         <div className="Game">
-            <button onClick={() => {
-                onStartNewGame();
-            }}>Start new game</button>
+            <button
+                onClick={() => {
+                    onStartNewGame();
+                }}
+            >
+                Start new game
+            </button>
             <div
                 style={{
                     marginBottom: '10px',
@@ -92,10 +80,9 @@ const Game = ({ gameConfig, onStartNewGame }) => {
             >
                 <PlayerWidget
                     isActive={game.turn === Players.Player1}
-                    player={Players.Player1}
-                    playerType={gameConfig.players[0]}
+                    player={game.players[Players.Player1]}
                     numberOfPiecesHeKilled={
-                        game.killedPieces?.filter((e) => e.owner === Players.Player2)?.length
+                        game.killedPieces?.filter((e) => e.owner?.id === Players.Player2)?.length
                     }
                 />
             </div>
@@ -112,8 +99,12 @@ const Game = ({ gameConfig, onStartNewGame }) => {
                                 <Piece
                                     key={`Piece-${rowIndex}-${colIndex}`}
                                     piece={piece}
-                                    onClick={(eventData) => {
-                                        dispatch(eventData);
+                                    handleClick={(action, piece) => {
+                                        if(action === 'selectPiece') {
+                                            onSelectPiece(piece);
+                                        } else if(action === 'movePiece') {
+                                            onMovePiece(piece);
+                                        }
                                     }}
                                 />
                             );
@@ -124,10 +115,9 @@ const Game = ({ gameConfig, onStartNewGame }) => {
             <div>
                 <PlayerWidget
                     isActive={game.turn === Players.Player2}
-                    player={Players.Player2}
-                    playerType={gameConfig.players[1]}
+                    player={game.players[Players.Player2]}
                     numberOfPiecesHeKilled={
-                        game.killedPieces?.filter((e) => e.owner === Players.Player1)?.length
+                        game.killedPieces?.filter((e) => e.owner?.id === Players.Player1)?.length
                     }
                 />
             </div>
