@@ -328,10 +328,10 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (maximizingPlayer) {
         let maxEval = -Infinity;
         let bestMove = null;
-        const movablePieces = getMovablePieces(cloneDeep(game.board), Players.Player2);
+        const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
-            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), Players.Player2, currentPiece);
+            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
             for (let j = 0; j < possibleMoves.length; j++) {
                 const newGame = moveGamePiece(cloneDeep(game), currentPiece, possibleMoves[j]);
                 const { evaluation } = aiPlayer(
@@ -358,11 +358,11 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     } else {
         let minEval = Infinity;
         let bestMove = null;
-        const movablePieces = getMovablePieces(cloneDeep(game.board), Players.Player1);
+        const movablePieces = getMovablePieces(cloneDeep(game.board), getOpponent(game.turn));
 
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
-            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), Players.Player1, currentPiece);
+            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), getOpponent(game.turn), currentPiece);
 
             for (let j = 0; j < possibleMoves.length; j++) {
                 const newGame = moveGamePiece(cloneDeep(game), currentPiece, possibleMoves[j]);
