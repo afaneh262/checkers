@@ -1,27 +1,39 @@
 .Start {
     padding: 50px;
-    background-color: cadetblue;
-    border-radius: 15px;
+
+    h1 {
+        text-align: center;
+        margin: 0 0 20px;
+        font-size: 30px;
+    }
 
     .Level {
         margin-bottom: 15px;
+        padding: 20px;
+        background: linear-gradient(180deg, rgba(235,170,99,1) 0%, rgba(149,93,28,1) 49%, rgba(232,182,121,1) 100%);
+        border-radius: 15px;
+        border: 5px solid #fff;
 
         .Level__Title {
-            font-size: 18px;
+            font-size: 23px;
             color: #fff;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
         }
 
         .Level__Choices {
             display: flex;
+            justify-content: center;
 
-            .Level {
+            .Level2 {
                 background-color: #fff;
                 padding: 5px 10px;
                 cursor: pointer;
                 text-transform: uppercase;
                 font-size: 12px;
                 font-weight: 700;
+                color: #000;
 
                 &:first-child {
                     border-radius: 15px 0 0 15px;
@@ -41,15 +53,22 @@
 
     .PlayerChoice {
         margin-bottom: 15px;
+        padding: 20px;
+        background: linear-gradient(180deg, rgba(235,170,99,1) 0%, rgba(149,93,28,1) 49%, rgba(232,182,121,1) 100%);
+        border-radius: 15px;
+        border: 5px solid #fff;
 
         .PlayerChoice__Title {
-            font-size: 18px;
+            font-size: 23px;
             color: #fff;
-            margin-bottom: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
         }
 
         .PlayerChoice__List {
             display: flex;
+            justify-content: center;
 
             >div:first-child {
                 margin-right: 50px;
@@ -69,11 +88,13 @@
                     margin-bottom: 5px;
                     text-transform: uppercase;
                     cursor: pointer;
+
                     .PlayerList__Types__Check {
                         width: 20px;
                         height: 20px;
-                        background: #fff;
-                        border: 3px dashed #000;
+                        background: transparent;
+                        border: 3px solid #000;
+                        border-radius: 50%;
                         margin-right: 5px;
 
                         &.IsSelected {
@@ -89,6 +110,16 @@
                 }
             }
         }
+    }
+
+    .StartBtn {
+        padding: 10px 50px;
+        font-size: 25px;
+        color: #fff;
+        background: linear-gradient(to bottom, #a06927 0%,#8c3310 50%,#752201 51%,#7f5318 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+        border-radius: 15px;
+        border: 5px solid #fff;
+        cursor: pointer;
     }
     
 }

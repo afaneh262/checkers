@@ -1,15 +1,12 @@
 .Square {
-    height: 60px;
-    width: 60px;
-    background-color: rgb(153, 89, 49);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .PossibleMove {
-    height: 30px;
-    width: 30px;
+    height: 40px;
+    width: 40px;
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
@@ -19,31 +16,39 @@
 }
 
 .Piece {
-    height: 30px;
-    width: 30px;
+    height: 40px;
+    width: 40px;
     border-radius: 50%;
     transition-duration: 0.15s;
-    box-shadow: rgb(107, 63, 31) 2px 2px;
-    background-color: rgb(64, 63, 63);
-    border-color: white;
-    border-style: solid;
-    border-width: 2px;
     justify-content: center;
     display: flex;
     align-items: center;
-
-    &[owner="player1"] {
-        background-color: red;
-    }
-
+    position: relative;
+    z-index: 2;
+    
     &.IsMovable {
         cursor: pointer;
-        border-color: gold;
+
+        &::before {
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: 42px;
+            height: 42px;
+            content: '';
+            display: block;
+            border: 2px solid gold;
+            box-shadow: 0 0 10px gold;
+            border-radius: 50%;
+        }
     }
 
+    
     &.IsSelected {
-        cursor: pointer;
-        border-color: red;
+        &::before {
+            border: 2px solid red;
+            box-shadow: 0 0 10px red;
+        }
     }
 
     .IsKing {

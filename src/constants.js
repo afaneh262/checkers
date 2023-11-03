@@ -16,7 +16,7 @@ export const Players = {
 
 export const PlayersColors = {
     [Players.Player1]: '#000',
-    [Players.Player2]: 'red'
+    [Players.Player2]: '#fff'
 };
 
 export const PlayersNames = {

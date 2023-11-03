@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useReducer } from 'react';
-import clsx from 'clsx';
+import React, { useState } from 'react';
 
 import './styles.scss';
 
 import Start from './Components/Start';
 import Game from './Components/Game';
 import End from './Components/End';
+import { Players } from './constants';
 
 const stages = {
     start: 'start',
@@ -18,7 +17,7 @@ const App = () => {
     const [selectedStage, setSelectedStage] = useState(stages.end);
     const [gameConfig, setGameConfig] = useState({});
     const [endedGame, sendEndedGame] = useState({
-        winner: 'player1',
+        winner: Players.Player1,
     });
     return (
         <div className="App">
@@ -36,9 +35,13 @@ const App = () => {
                     onStartNewGame={() => {
                         setSelectedStage(stages.start);
                     }}
+                    onGameEnded={(game) => {
+                        sendEndedGame(game);
+                        setSelectedStage(stages.end);
+                    }}
                 ></Game>
             )}
-            {selectedStage === stages.end && (
+            {(selectedStage === stages.end) && (
                 <End
                     game={endedGame}
                     onStartNewGame={() => {

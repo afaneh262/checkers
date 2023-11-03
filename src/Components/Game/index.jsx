@@ -44,7 +44,9 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
         }
 
         if(game.players[game.turn].type === PlayerTypes.Ai) {
-            init();
+            setTimeout(() => {
+                init();
+            }, 100)
         }
     }, [game.turn]);
 
@@ -67,30 +69,25 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     return (
         <div className="Game">
             <button
+            className='StartNewGameBtn'
                 onClick={() => {
                     onStartNewGame();
                 }}
             >
                 Start new game
             </button>
-            <div
-                style={{
-                    marginBottom: '10px',
-                }}
-            >
+            <div className='PlayerWidget__Wrap'>
                 <PlayerWidget
                     isActive={game.turn === Players.Player1}
                     player={game.players[Players.Player1]}
                     numberOfPiecesHeKilled={
                         game.killedPieces?.filter((e) => e.owner?.id === Players.Player2)?.length
                     }
+                    opponent={game.players[Players.Player2]}
                 />
             </div>
             <div
                 className="Board"
-                style={{
-                    marginBottom: '10px',
-                }}
             >
                 {game.board.map((boardRow, rowIndex) => (
                     <div className="Row" key={'Row' + rowIndex}>
@@ -112,13 +109,14 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                     </div>
                 ))}
             </div>
-            <div>
+            <div className='PlayerWidget__Wrap'>
                 <PlayerWidget
                     isActive={game.turn === Players.Player2}
                     player={game.players[Players.Player2]}
                     numberOfPiecesHeKilled={
                         game.killedPieces?.filter((e) => e.owner?.id === Players.Player1)?.length
                     }
+                    opponent={game.players[Players.Player1]}
                 />
             </div>
         </div>

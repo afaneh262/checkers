@@ -1,21 +1,48 @@
 .Game {
-    width: 480px;
-    margin: 0 auto;
+    //width: 500px;
+    //margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.StartNewGameBtn {
+    position: absolute;
 }
 
 .Board {
-    width: 480px;
+    width: 500px;
     position: relative;
-    
+    border: 10px solid #000;
+    background: #000;
+
     .Row {
         display: flex;
 
-        &:nth-child(2n + 1) .Square:nth-child(2n + 1) {
-            background-color: rgb(255, 222, 152);
+        &:nth-child(2n) {
+            .Square:nth-child(2n) {
+                background-color: #e8b679;
+            }
+            .Square:nth-child(2n + 1) {
+                background-color: #bf8648;
+            }
         }
 
-        &:nth-child(2n) .Square:nth-child(2n) {
-            background-color: rgb(255, 222, 152);
+        &:nth-child(2n + 1) {
+            .Square:nth-child(2n) {
+                background-color: #bf8648;
+            }
+
+            .Square:nth-child(2n + 1) {
+                background-color: #e8b679;
+            }
+        }
+
+        .Square {
+            border-radius: 5px;
+            margin: 2px;
+            height: 56px;
+            width: 56px;
         }
     }
 }

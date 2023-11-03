@@ -457,8 +457,6 @@ export const playAi = async (game) => {
         true,
     );
 
-    console.log('bestMove', bestMove);
-
     const { piece, newPosition } = bestMove;
     const newGame = moveGamePiece(cloneDeep(game), newPosition, piece);
 
