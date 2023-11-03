@@ -14,11 +14,9 @@ const stages = {
 };
 
 const App = () => {
-    const [selectedStage, setSelectedStage] = useState(stages.end);
+    const [selectedStage, setSelectedStage] = useState(stages.start);
     const [gameConfig, setGameConfig] = useState({});
-    const [endedGame, sendEndedGame] = useState({
-        winner: Players.Player1,
-    });
+    const [endedGame, sendEndedGame] = useState();
     return (
         <div className="App">
             {selectedStage === stages.start && (

@@ -2,6 +2,7 @@ import clsx from 'clsx';
 
 import './styles.scss';
 import kingIcon from './crown.svg';
+import kingBlackIcon from './crown-black.svg';
 
 const Piece = ({ piece, handleClick }) => {
     const renderSquareContent = (piece) => {
@@ -23,7 +24,7 @@ const Piece = ({ piece, handleClick }) => {
                 >
                     {piece.isKing ? (
                         <div className="IsKing">
-                            <img src={kingIcon} />
+                            <img src={piece.owner.color === '#000' ? kingIcon : kingBlackIcon} />
                         </div>
                     ) : null}
                 </div>
