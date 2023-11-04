@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import './styles.scss';
 import { PlayerTypes } from '../../constants';
 
-const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent }) => {
+const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move }) => {
     return (
         <div className={clsx('PlayerTile')}>
             <div className="PlayerTile__Content">
@@ -27,6 +27,11 @@ const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent }) =>
                 <div className="PlayerTile__Name">
                     {player.name} - {player.type.toUpperCase()}
                 </div>
+                {move?.piece && (
+                <div className="PlayerTile__Move">
+                    <smal>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</smal>
+                </div>
+                )}
             </div>
             {isActive && (
                 <div className="Action">

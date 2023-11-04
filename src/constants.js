@@ -25,3 +25,8 @@ export const PlayersNames = {
 };
 
 export const InitalPlayerToStart = Players.Player1;
+
+export const BoardConfig = {
+    row: 8,
+    col: 8
+};
