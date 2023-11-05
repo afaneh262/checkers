@@ -74,7 +74,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     const [player2Move, setPlayer2Move] = useState({});
     useEffect(() => {
         const init = async () => {
-            const { newGame, bestMove } = await playAi(cloneDeep(game));
+            const { newGame, bestMove } = await playAi(cloneDeep(game), gameConfig.level);
             setGame(newGame);
             if (game.turn === Players.Player1) {
                 setPlayer1Move(bestMove);

@@ -253,7 +253,7 @@ const evaluateBoard = (board) => {
         for (let col = 0; col < board[row].length; col++) {
             const { owner, isKing } = board[row][col];
             // Scoring based on pieces and kings
-            if (owner === Players.Player1) {
+            if (owner?.id === Players.Player1) {
                 player1Score += isKing ? 5 : 3;
                 // Consider piece mobility for Player 1
                 player1Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player1, board[row][col]).length;
@@ -265,7 +265,7 @@ const evaluateBoard = (board) => {
                 if (row >= 3 && row <= 4 && col >= 3 && col <= 4) {
                     player1CenterControl++;
                 }
-            } else if (owner === Players.Player2) {
+            } else if (owner?.id === Players.Player2) {
                 player2Score += isKing ? 5 : 3;
                 // Consider piece mobility for Player 2
                 player2Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player2, board[row][col]).length;
@@ -286,7 +286,7 @@ const evaluateBoard = (board) => {
     player1Score += player1Mobility + 2 * player1CenterControl - player2Threats * 2;
     player2Score += player2Mobility + 2 * player2CenterControl - player1Threats * 2;
     // Return the difference between player scores
-    return player1Score - player2Score;
+    return player2Score - player1Score;
 };
 
 
@@ -331,6 +331,7 @@ class TreeNode {
 const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (depth === 0 || game.isEnd) {
         const evaluation = evaluateBoard(cloneDeep(game.board));
+        console.log({evaluation});
         return new TreeNode({ evaluation });
     }
 
@@ -340,6 +341,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
         let maxEval = -Infinity;
         let bestMove = null;
         const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
+        console.log('depth', depth, movablePieces.length)
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
             const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
@@ -453,15 +455,16 @@ export const moveGamePiece = (game, newPosition, selectedPiece2) => {
 };
 
 
-export const playAi = async (game) => {
-    const { bestMove } = aiPlayer(
+export const playAi = async (game, depth) => {
+    const gameTree = aiPlayer(
         cloneDeep(game),
-        3, // specify the desired depth for the search
+        depth, // specify the desired depth for the search
         -Infinity,
         Infinity,
         true,
     );
 
+    const { bestMove } = gameTree.value;
     const { piece, newPosition } = bestMove;
     const newGame = moveGamePiece(cloneDeep(game), newPosition, piece);
 

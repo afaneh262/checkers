@@ -4,9 +4,9 @@ export const PlayerTypes = {
 };
 
 export const Levels = {
-    'Easy': 'easy',
-    'Medium': 'medium',
-    'Hard': 'hard'
+    'Easy': 1,
+    'Medium': 2,
+    'Hard': 3
 };
 
 export const Players = {

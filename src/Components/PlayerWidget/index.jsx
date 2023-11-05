@@ -29,7 +29,7 @@ const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move
                 </div>
                 {move?.piece && (
                 <div className="PlayerTile__Move">
-                    <smal>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</smal>
+                    <small>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</small>
                 </div>
                 )}
             </div>
