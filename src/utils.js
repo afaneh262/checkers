@@ -1,9 +1,51 @@
-import { clone, cloneDeep } from "lodash";
-import {
-    Players,
-    InitalPlayerToStart,
-    BoardConfig
-} from './constants';
+const cloneDeep = (source) => {
+    if (source === null || typeof source !== 'object') {
+        return source;
+    }
+
+    const target = Array.isArray(source) ? [] : {};
+
+    for (const key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = cloneDeep(source[key]);
+        }
+    }
+
+    return target;
+};
+
+export const PlayerTypes = {
+    Ai: 'ai',
+    'Human': 'human'
+};
+
+export const Levels = {
+    'Easy': 1,
+    'Medium': 3,
+    'Hard': 5
+};
+
+export const Players = {
+    Player1: 'player1',
+    Player2: 'player2'
+};
+
+export const PlayersColors = {
+    [Players.Player1]: '#000',
+    [Players.Player2]: '#fff'
+};
+
+export const PlayersNames = {
+    [Players.Player1]: 'Player 1',
+    [Players.Player2]: 'Player 2'
+};
+
+export const InitalPlayerToStart = Players.Player1;
+
+export const BoardConfig = {
+    row: 8,
+    col: 8
+};
 
 const getMoveDirections = (player, isKing) => {
     if (isKing) {
@@ -331,7 +373,6 @@ class TreeNode {
 const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (depth === 0 || game.isEnd) {
         const evaluation = evaluateBoard(cloneDeep(game.board));
-        console.log({evaluation});
         return new TreeNode({ evaluation });
     }
 
@@ -341,7 +382,6 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
         let maxEval = -Infinity;
         let bestMove = null;
         const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
-        console.log('depth', depth, movablePieces.length)
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
             const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
@@ -468,7 +508,7 @@ export const playAi = async (game, depth) => {
     const { piece, newPosition } = bestMove;
     const newGame = moveGamePiece(cloneDeep(game), newPosition, piece);
 
-    return { newGame, bestMove };
+    return { newGame, bestMove, gameTree };
 }
 
 function delay(seconds) {

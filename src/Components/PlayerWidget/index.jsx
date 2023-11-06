@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 
 import './styles.scss';
-import { PlayerTypes } from '../../constants';
+import { PlayerTypes } from '../../utils';
 
 const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move }) => {
     return (

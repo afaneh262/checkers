@@ -8,7 +8,7 @@ import {
     PlayersNames,
     Players,
     InitalPlayerToStart,
-} from './../../constants';
+} from './../../utils';
 
 import './styles.scss';
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { clone, cloneDeep } from 'lodash';
+import { cloneDeep } from 'lodash';
 import Tree from 'react-d3-tree';
 
-import { PlayerTypes, Players } from '../../constants';
 import {
+    PlayerTypes, 
+    Players,
     selectGamePiece,
     moveGamePiece,
     playAi,
@@ -15,42 +16,6 @@ import PlayerWidget from '../PlayerWidget';
 import Piece from '../Piece';
 
 import './styles.scss';
-
-const orgChart = {
-    name: 'CEO',
-    children: [
-        {
-            name: 'Manager',
-            attributes: {
-                department: 'Production',
-            },
-            children: [
-                {
-                    name: 'Foreman',
-                    attributes: {
-                        department: 'Fabrication',
-                    },
-                    children: [
-                        {
-                            name: 'Worker',
-                        },
-                    ],
-                },
-                {
-                    name: 'Foreman',
-                    attributes: {
-                        department: 'Assembly',
-                    },
-                    children: [
-                        {
-                            name: 'Worker',
-                        },
-                    ],
-                },
-            ],
-        },
-    ],
-};
 
 const buildGameState = (gameConfig) => {
     const { level, players, initalPlayerToStart } = gameConfig;
@@ -72,14 +37,19 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     const [game, setGame] = useState(buildGameState(gameConfig));
     const [player1Move, setPlayer1Move] = useState({});
     const [player2Move, setPlayer2Move] = useState({});
+    const [player1Tree, setPlayer1Tree] = useState(null);
+    const [player2Tree, setPlayer2Tree] = useState();
+
     useEffect(() => {
         const init = async () => {
-            const { newGame, bestMove } = await playAi(cloneDeep(game), gameConfig.level);
+            const { newGame, bestMove, gameTree } = await playAi(cloneDeep(game), gameConfig.level);
             setGame(newGame);
             if (game.turn === Players.Player1) {
                 setPlayer1Move(bestMove);
+                setPlayer1Tree(gameTree);
             } else if (game.turn === Players.Player2) {
                 setPlayer2Move(bestMove);
+                setPlayer2Tree(gameTree);
             }
         };
 
@@ -163,9 +133,23 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                     />
                 </div>
             </div>
-            <div id="treeWrapper" style={{ width: '90%', height: '100vh', background: '#fff' }}>
-                <Tree data={orgChart} orientation={'vertical'} collapsible={false} />
-            </div>
+            {player2Tree && (
+                <div id="treeWrapper" style={{ width: '90%', height: '100vh', background: '#fff' }}>
+                    <Tree
+                        data={player2Tree}
+                        orientation={'vertical'}
+                        collapsible={false}
+                        renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
+                            <g>
+                                <rect width="20" height="20" x="-10" onClick={toggleNode} />
+                                <text fill="black" strokeWidth="1" x="20">
+                                    {nodeDatum.value.evaluation}
+                                </text>
+                            </g>
+                        )}
+                    />
+                </div>
+            )}
         </div>
     );
 };

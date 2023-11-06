@@ -5,7 +5,6 @@ import './styles.scss';
 import Start from './Components/Start';
 import Game from './Components/Game';
 import End from './Components/End';
-import { Players } from './constants';
 
 const stages = {
     start: 'start',
