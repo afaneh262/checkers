@@ -281,9 +281,8 @@ const findPiecePossibleMoves = (board, player, selectedPiece) => {
     return possibleMoves;
 };
 
-// Constants for weights
 const mobilityWeight = 1;
-const centerControlWeight = 2;
+const centerControlWeight = 2; // Increased weight for center control
 const threatWeight = 2;
 
 const evaluateBoard = (board) => {
@@ -296,67 +295,109 @@ const evaluateBoard = (board) => {
     let player1CenterControl = 0;
     let player2CenterControl = 0;
 
+    const centerRowsAndCols = [Math.floor(board.length / 2), Math.floor(board.length / 2) + 1]; // Rows that contribute to center control
+
     for (let row = 0; row < board.length; row++) {
         for (let col = 0; col < board[row].length; col++) {
             const { owner, isKing } = board[row][col];
             if (owner?.id === Players.Player1) {
                 player1Score += isKing ? 5 : 3;
                 player1Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player1, board[row][col]).length;
-                if (isPieceThreatened(cloneDeep(board), row, col, Players.Player1, isKing)) {
-                    player1Threats++;
+                if (isPieceThreatened(cloneDeep(board), row, col)) {
+                    player1Threats--;
                 }
-                if (row >= 3 && row <= 4 && col >= 3 && col <= 4) {
+                if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
                     player1CenterControl++;
                 }
             } else if (owner?.id === Players.Player2) {
                 player2Score += isKing ? 5 : 3;
                 player2Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player2, board[row][col]).length;
-                if (isPieceThreatened(cloneDeep(board), row, col, Players.Player2, isKing)) {
-                    player2Threats++;
+                if (isPieceThreatened(cloneDeep(board), row, col)) {
+                    player2Threats--;
                 }
-                if (row >= 3 && row <= 4 && col >= 3 && col <= 4) {
+                if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
                     player2CenterControl++;
                 }
             }
         }
     }
 
-    player1Score += player1Mobility * mobilityWeight + player1CenterControl * centerControlWeight - player1Threats * threatWeight;
-    player2Score += player2Mobility * mobilityWeight + player2CenterControl * centerControlWeight - player2Threats * threatWeight;
+    player1Score += player1Mobility * mobilityWeight + player1CenterControl * centerControlWeight + player1Threats * threatWeight;
+    player2Score += player2Mobility * mobilityWeight + player2CenterControl * centerControlWeight + player2Threats * threatWeight;
     return player2Score - player1Score;
 };
 
 
+
 // Function to check if a piece is threatened
-const isPieceThreatened = (board, row, col, player, isKing) => {
-    const opponent = getOpponent(player);
-    const directions = getMoveDirections(opponent, isKing);
+const isPieceThreatened = (board, row, col) => {
+    const surroundingOffsets = {
+        [Players.Player1]: [
+            {
+                offset: { row: 1, col: 1 },
+                jump: { row: -1, col: -1 },
+                isKing: false
+            },
+            {
+                offset: { row: 1, col: -1 },
+                jump: { row: -1, col: 1 },
+                isKing: false
+            },
+            {
+                offset: { row: -1, col: -1 },
+                jump: { row: 1, col: 1 },
+                isKing: true
+            },
+            {
+                offset: { row: -1, col: 1 },
+                jump: { row: 1, col: -1 },
+                isKing: true
+            },
+        ],
+        [Players.Player2]: [
+            {
+                offset: { row: -1, col: -1 },
+                jump: { row: 1, col: 1 },
+                isKing: false
+            },
+            {
+                offset: { row: -1, col: 1 },
+                jump: { row: 1, col: -1 },
+                isKing: false
+            },
+            {
+                offset: { row: 1, col: 1 },
+                jump: { row: -1, col: -1 },
+                isKing: true
+            },
+            {
+                offset: { row: 1, col: -1 },
+                jump: { row: -1, col: 1 },
+                isKing: true
+            },
+        ]
+    };
 
-    for (const [rowDir, colDir] of directions) {
-        const checkRow = row + rowDir;
-        const checkCol = col + colDir;
-        const jumpRow = checkRow + rowDir;
-        const jumpCol = checkCol + colDir;
+    const owner = board[row][col]?.owner?.id;
+    const offsets = owner && surroundingOffsets[owner];
+    if(!owner || !offsets) {
+        return false;
+    }
 
-        const validRow = jumpRow >= 0 && jumpRow < BoardConfig.row;
-        const validCol = jumpCol >= 0 && jumpCol < BoardConfig.col;
+    const opponent = getOpponent(owner);
 
-        if (validRow && validCol) {
-            const pieceAtCheckPosition = board[checkRow][checkCol];
-            const pieceAtJumpPosition = board[jumpRow][jumpCol];
-
-            const isOpponentPiece = pieceAtCheckPosition.owner === opponent;
-            const isJumpPositionEmpty = !pieceAtJumpPosition.owner;
-
-            if (isOpponentPiece && isJumpPositionEmpty) {
-                return true;
-            }
+    for (let entry of offsets) {
+        const newRow = row + entry.offset.row;
+        const newCol = col + entry.offset.col;
+        const newRowJump = row + entry.jump.row;
+        const newColJump = col + entry.jump.col;
+        if (isValidPosition(newRow, newCol) && board[newRow][newCol]?.owner?.id === opponent && board[newRow][newCol].isKing == entry.isKing && !board[newRowJump][newColJump]?.owner?.id) {
+            return true;
         }
     }
 
     return false;
 };
-
 
 class TreeNode {
     constructor(value) {
@@ -493,6 +534,9 @@ export const moveGamePiece = (game, newPosition, selectedPiece2) => {
     return newGame;
 };
 
+const isValidPosition = (row, col) => {
+    return row >= 0 && row < BoardConfig.row && col >= 0 && col < BoardConfig.col;
+};
 
 export const playAi = async (game, depth) => {
     const gameTree = aiPlayer(
