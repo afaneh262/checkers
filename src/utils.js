@@ -281,6 +281,11 @@ const findPiecePossibleMoves = (board, player, selectedPiece) => {
     return possibleMoves;
 };
 
+// Constants for weights
+const mobilityWeight = 1;
+const centerControlWeight = 2;
+const threatWeight = 2;
+
 const evaluateBoard = (board) => {
     let player1Score = 0;
     let player2Score = 0;
@@ -294,28 +299,21 @@ const evaluateBoard = (board) => {
     for (let row = 0; row < board.length; row++) {
         for (let col = 0; col < board[row].length; col++) {
             const { owner, isKing } = board[row][col];
-            // Scoring based on pieces and kings
             if (owner?.id === Players.Player1) {
                 player1Score += isKing ? 5 : 3;
-                // Consider piece mobility for Player 1
                 player1Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player1, board[row][col]).length;
-                // Evaluate threats for Player 1
                 if (isPieceThreatened(cloneDeep(board), row, col, Players.Player1, isKing)) {
                     player1Threats++;
                 }
-                // Evaluate center control for Player 1
                 if (row >= 3 && row <= 4 && col >= 3 && col <= 4) {
                     player1CenterControl++;
                 }
             } else if (owner?.id === Players.Player2) {
                 player2Score += isKing ? 5 : 3;
-                // Consider piece mobility for Player 2
                 player2Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player2, board[row][col]).length;
-                // Evaluate threats for Player 2
                 if (isPieceThreatened(cloneDeep(board), row, col, Players.Player2, isKing)) {
                     player2Threats++;
                 }
-                // Evaluate center control for Player 2
                 if (row >= 3 && row <= 4 && col >= 3 && col <= 4) {
                     player2CenterControl++;
                 }
@@ -323,11 +321,8 @@ const evaluateBoard = (board) => {
         }
     }
 
-    // Adjust the evaluation based on specific considerations
-    // Example adjustments based on mobility, threats, and center control
-    player1Score += player1Mobility + 2 * player1CenterControl - player2Threats * 2;
-    player2Score += player2Mobility + 2 * player2CenterControl - player1Threats * 2;
-    // Return the difference between player scores
+    player1Score += player1Mobility * mobilityWeight + player1CenterControl * centerControlWeight - player1Threats * threatWeight;
+    player2Score += player2Mobility * mobilityWeight + player2CenterControl * centerControlWeight - player2Threats * threatWeight;
     return player2Score - player1Score;
 };
 
@@ -335,29 +330,33 @@ const evaluateBoard = (board) => {
 // Function to check if a piece is threatened
 const isPieceThreatened = (board, row, col, player, isKing) => {
     const opponent = getOpponent(player);
-    const directions = getMoveDirections(opponent, isKing); // Consider both forward and backward directions for kings
+    const directions = getMoveDirections(opponent, isKing);
 
-    for (const [rowDirection, colDirection] of directions) {
-        const checkRow = row + rowDirection;
-        const checkCol = col + colDirection;
-        const jumpRow = checkRow + rowDirection;
-        const jumpCol = checkCol + colDirection;
+    for (const [rowDir, colDir] of directions) {
+        const checkRow = row + rowDir;
+        const checkCol = col + colDir;
+        const jumpRow = checkRow + rowDir;
+        const jumpCol = checkCol + colDir;
 
-        if (
-            jumpRow >= 0 &&
-            jumpRow < BoardConfig.row &&
-            jumpCol >= 0 &&
-            jumpCol < BoardConfig.col &&
-            board[checkRow][checkCol].owner === opponent &&
-            !board[jumpRow][jumpCol].owner
-        ) {
-            // If there is an opponent's piece that can jump over the current piece, it is threatened
-            return true;
+        const validRow = jumpRow >= 0 && jumpRow < BoardConfig.row;
+        const validCol = jumpCol >= 0 && jumpCol < BoardConfig.col;
+
+        if (validRow && validCol) {
+            const pieceAtCheckPosition = board[checkRow][checkCol];
+            const pieceAtJumpPosition = board[jumpRow][jumpCol];
+
+            const isOpponentPiece = pieceAtCheckPosition.owner === opponent;
+            const isJumpPositionEmpty = !pieceAtJumpPosition.owner;
+
+            if (isOpponentPiece && isJumpPositionEmpty) {
+                return true;
+            }
         }
     }
 
     return false;
 };
+
 
 class TreeNode {
     constructor(value) {
