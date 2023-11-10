@@ -331,6 +331,7 @@ const evaluateBoard = (board) => {
 
 // Function to check if a piece is threatened
 const isPieceThreatened = (board, row, col) => {
+    return false;
     const surroundingOffsets = {
         [Players.Player1]: [
             {
@@ -413,7 +414,7 @@ class TreeNode {
 const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (depth === 0 || game.isEnd) {
         const evaluation = evaluateBoard(cloneDeep(game.board));
-        return new TreeNode({ evaluation });
+        return new TreeNode({ evaluation, board: cloneDeep(game.board) });
     }
 
     const currentNode = new TreeNode({});
@@ -421,13 +422,17 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (maximizingPlayer) {
         let maxEval = -Infinity;
         let bestMove = null;
+        let theResultBoard = null;
         const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
             const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
             for (let j = 0; j < possibleMoves.length; j++) {
-                const newGame = moveGamePiece(cloneDeep(game), currentPiece, possibleMoves[j]);
+                debugger;
+                const newGame = moveGamePiece(cloneDeep(game), possibleMoves[j], currentPiece);
+                debugger;
                 const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, false);
+                debugger;
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
                 if (evaluation > maxEval) {
@@ -436,6 +441,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                         piece: cloneDeep(currentPiece),
                         newPosition: cloneDeep(possibleMoves[j]),
                     };
+                    theResultBoard = cloneDeep(newGame.board);
                 }
                 alpha = Math.max(alpha, evaluation);
                 if (beta <= alpha) {
@@ -443,18 +449,17 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: maxEval, bestMove };
+        currentNode.value = { evaluation: maxEval, bestMove, board: theResultBoard };
     } else {
         let minEval = Infinity;
         let bestMove = null;
-        const movablePieces = getMovablePieces(cloneDeep(game.board), getOpponent(game.turn));
-
+        let theResultBoard = null;
+        const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
-            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), getOpponent(game.turn), currentPiece);
-
+            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
             for (let j = 0; j < possibleMoves.length; j++) {
-                const newGame = moveGamePiece(cloneDeep(game), currentPiece, possibleMoves[j]);
+                const newGame = moveGamePiece(cloneDeep(game), possibleMoves[j], currentPiece);
                 const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, true);
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
@@ -464,6 +469,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                         piece: cloneDeep(currentPiece),
                         newPosition: cloneDeep(possibleMoves[j]),
                     };
+                    theResultBoard = cloneDeep(newGame.board);
                 }
                 beta = Math.min(beta, evaluation);
                 if (beta <= alpha) {
@@ -471,7 +477,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: minEval, bestMove };
+        currentNode.value = { evaluation: minEval, bestMove, board: theResultBoard };
     }
     return currentNode;
 };
@@ -508,6 +514,7 @@ export const moveGamePiece = (game, newPosition, selectedPiece2) => {
         selectedPiece3.coordinates,
         newPosition.coordinates,
     );
+    debugger;
 
     // check if game ended
     const opponentMovablePieces = getMovablePieces(cloneDeep(updatedBoard), opponent);
@@ -531,6 +538,7 @@ export const moveGamePiece = (game, newPosition, selectedPiece2) => {
         killedPieces: (killedPieces || []).concat(newKilledPieces)
     };
 
+    debugger;
     return newGame;
 };
 
@@ -538,7 +546,7 @@ const isValidPosition = (row, col) => {
     return row >= 0 && row < BoardConfig.row && col >= 0 && col < BoardConfig.col;
 };
 
-export const playAi = async (game, depth) => {
+export const playAi = (game, depth) => {
     const gameTree = aiPlayer(
         cloneDeep(game),
         depth, // specify the desired depth for the search

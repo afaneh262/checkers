@@ -3,13 +3,14 @@ import { cloneDeep } from 'lodash';
 import Tree from 'react-d3-tree';
 
 import {
-    PlayerTypes, 
+    PlayerTypes,
     Players,
     selectGamePiece,
     moveGamePiece,
     playAi,
     buildInitialBoard,
     highlighBoard,
+    PlayersColors,
 } from './../../utils';
 
 import PlayerWidget from '../PlayerWidget';
@@ -33,16 +34,65 @@ const buildGameState = (gameConfig) => {
     };
 };
 
+const cellSize = 20; // Adjust this according to your needs
+
+const renderCheckerPiece = (value, x, y) => {
+    if (!value?.owner) {
+        return null;
+    }
+    const circleStyle = {
+        cx: x * cellSize + cellSize / 2,
+        cy: y * cellSize + cellSize / 2,
+        r: cellSize / 2 - 2.5,
+    };
+
+    if (value.isKing) {
+        return (
+            <g>
+                <circle {...circleStyle} fill={value.owner.color} />
+                <circle {...circleStyle} r={circleStyle.r / 2} fill={value.owner.id === Players.Player1 ? PlayersColors[Players.Player2] : PlayersColors[Players.Player1]} />
+            </g>
+        );
+    }
+
+    return <circle {...circleStyle} fill={value.owner.color} />;
+};
+
+const CheckersBoard = ({ board }) => {
+    return (
+        <svg width={cellSize * 8} height={cellSize * 8}>
+            {board.map((row, y) =>
+                row.map((value, x) => (
+                    <g key={`${x}-${y}`}>
+                        <rect
+                            x={x * cellSize}
+                            y={y * cellSize}
+                            width={cellSize}
+                            height={cellSize}
+                            fill={(x + y) % 2 === 0 ? '#e8b679' : '#bf8648'}
+                        />
+                        {renderCheckerPiece(value, x, y)}
+                    </g>
+                )),
+            )}
+        </svg>
+    );
+};
+
 const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     const [game, setGame] = useState(buildGameState(gameConfig));
     const [player1Move, setPlayer1Move] = useState({});
     const [player2Move, setPlayer2Move] = useState({});
     const [player1Tree, setPlayer1Tree] = useState(null);
     const [player2Tree, setPlayer2Tree] = useState();
+    const [isPlayer1TreeShown, setIsPlayer1TreeShown] = useState(false);
+    const [isPlayer2TreeShown, setIsPlayer2TreeShown] = useState(false);
 
     useEffect(() => {
-        const init = async () => {
-            const { newGame, bestMove, gameTree } = await playAi(cloneDeep(game), gameConfig.level);
+        const init = () => {
+            debugger;
+            const { newGame, bestMove, gameTree } = playAi(cloneDeep(game), gameConfig.level);
+            console.log({gameTree});
             setGame(newGame);
             if (game.turn === Players.Player1) {
                 setPlayer1Move(bestMove);
@@ -97,6 +147,10 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         }
                         opponent={game.players[Players.Player2]}
                         move={player1Move}
+                        onShowMoveTree={() => {
+                            setIsPlayer2TreeShown(false);
+                            setIsPlayer1TreeShown(true);
+                        }}
                     />
                 </div>
                 <div className="Board">
@@ -130,19 +184,27 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         }
                         opponent={game.players[Players.Player1]}
                         move={player2Move}
+                        onShowMoveTree={() => {
+                            setIsPlayer1TreeShown(false);
+                            setIsPlayer2TreeShown(true);
+                        }}
                     />
                 </div>
             </div>
-            {player2Tree && (
-                <div id="treeWrapper" style={{ width: '90%', height: '100vh', background: '#fff' }}>
+            {(isPlayer1TreeShown || isPlayer2TreeShown) && (player2Tree || player1Tree) && (
+                <div className="TreeWrapper">
                     <Tree
-                        data={player2Tree}
+                        data={isPlayer1TreeShown ? player1Tree : player2Tree}
                         orientation={'vertical'}
-                        collapsible={false}
+                        collapsible={true}
+                        nodeSize={{
+                            x: 200,
+                            y: 200
+                        }}
                         renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
                             <g>
-                                <rect width="20" height="20" x="-10" onClick={toggleNode} />
-                                <text fill="black" strokeWidth="1" x="20">
+                                <CheckersBoard board={nodeDatum.value.board} />
+                                <text fill="black" strokeWidth="1" x="20" onClick={toggleNode}>
                                     {nodeDatum.value.evaluation}
                                 </text>
                             </g>

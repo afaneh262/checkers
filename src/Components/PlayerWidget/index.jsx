@@ -3,7 +3,7 @@ import clsx from 'clsx';
 import './styles.scss';
 import { PlayerTypes } from '../../utils';
 
-const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move }) => {
+const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move, onShowMoveTree }) => {
     return (
         <div className={clsx('PlayerTile')}>
             <div className="PlayerTile__Content">
@@ -28,9 +28,14 @@ const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move
                     {player.name} - {player.type.toUpperCase()}
                 </div>
                 {move?.piece && (
-                <div className="PlayerTile__Move">
-                    <small>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</small>
-                </div>
+                    <div className="PlayerTile__Move">
+                        <div>
+                            <small>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</small>
+                        </div>
+                        <div>
+                            <small onClick={onShowMoveTree} style={{textDecoration: 'underline', cursor: 'pointer', fontWeight: 700}}>Show move tree</small>
+                        </div>
+                    </div>
                 )}
             </div>
             {isActive && (
