@@ -417,9 +417,8 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
         return new TreeNode({ evaluation, board: cloneDeep(game.board) });
     }
 
-    const currentNode = new TreeNode({});
-
     if (maximizingPlayer) {
+        const currentNode = new TreeNode({});
         let maxEval = -Infinity;
         let bestMove = null;
         let theResultBoard = null;
@@ -449,8 +448,10 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: maxEval, bestMove, board: theResultBoard };
+        currentNode.value = { evaluation: maxEval, bestMove, board: cloneDeep(game.board) };
+        return currentNode;
     } else {
+        const currentNode = new TreeNode({});
         let minEval = Infinity;
         let bestMove = null;
         let theResultBoard = null;
@@ -477,9 +478,9 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: minEval, bestMove, board: theResultBoard };
+        currentNode.value = { evaluation: minEval, bestMove, board: cloneDeep(game.board) };
+        return currentNode;
     }
-    return currentNode;
 };
 
 

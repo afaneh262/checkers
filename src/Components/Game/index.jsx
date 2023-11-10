@@ -58,9 +58,9 @@ const renderCheckerPiece = (value, x, y) => {
     return <circle {...circleStyle} fill={value.owner.color} />;
 };
 
-const CheckersBoard = ({ board }) => {
+const CheckersBoard = ({ board, handleClick }) => {
     return (
-        <svg width={cellSize * 8} height={cellSize * 8}>
+        <svg width={cellSize * 8} height={cellSize * 8} onClick={handleClick}>
             {board.map((row, y) =>
                 row.map((value, x) => (
                     <g key={`${x}-${y}`}>
@@ -203,7 +203,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         }}
                         renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
                             <g>
-                                <CheckersBoard board={nodeDatum.value.board} />
+                                <CheckersBoard board={nodeDatum.value.board} handleClick={toggleNode} />
                                 <text fill="black" strokeWidth="1" x="20" onClick={toggleNode}>
                                     {nodeDatum.value.evaluation}
                                 </text>
