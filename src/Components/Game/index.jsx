@@ -121,6 +121,8 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     }, [game]);
 
     const onSelectPiece = (piece) => {
+        setIsPlayer1TreeShown(false);
+        setIsPlayer2TreeShown(false);
         game.selectPiece(piece.row, piece.col);
         setGame((prevInstance) => {
             const newInstance = Object.create(Object.getPrototypeOf(prevInstance));
@@ -130,6 +132,8 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     };
 
     const onMovePiece = (piece) => {
+        setIsPlayer1TreeShown(false);
+        setIsPlayer2TreeShown(false);
         game.movePiece(
             { row: game.selectedPiece.row, col: game.selectedPiece.col },
             { row: piece.row, col: piece.col },
