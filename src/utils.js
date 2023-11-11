@@ -266,7 +266,7 @@ const evaluateGame = (game) => {
                 let numberOfPossibleJumps = 0;
                 scores[owner].score += isKing ? 5 : 3;
                 pieceMoves.forEach((entry) => {
-                    if(entry.isJump) {
+                    if (entry.isJump) {
                         numberOfPossibleJumps++;
                     } else {
                         numberOfPossibleMoves++;
@@ -400,6 +400,22 @@ class TreeNode {
     }
 }
 
+const getAllPossibleMoves = (game) => {
+    const allMoves = [];
+    const movablePieces = game.getPlayerMovablePieces(game.turn);
+    movablePieces.forEach((mPiece) => {
+        const mPieceMoves = game.findPiecePossibleMoves(mPiece.row, mPiece.col);
+        mPieceMoves.forEach((move) => {
+            allMoves.push({
+                from: { ...mPiece },
+                to: { ...move },
+            });
+        });
+    });
+
+    return allMoves;
+};
+
 const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
     if (depth === 0 || game.isEnd()) {
         const evaluation = evaluateGame(game);
@@ -410,27 +426,24 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
         const currentNode = new TreeNode({}, cloneDeep(game.board));
         let maxEval = -Infinity;
         let bestMove = null;
-        const movablePieces = game.getPlayerMovablePieces(game.turn);
-        for (let i = 0; i < movablePieces.length; i++) {
-            const currentPiece = movablePieces[i];
-            const possibleMoves = game.findPiecePossibleMoves(currentPiece.row, currentPiece.col);
-            for (let j = 0; j < possibleMoves.length; j++) {
-                const newGame = getNewGameInstance(game);
-                newGame.movePiece(currentPiece, possibleMoves[j]);
-                const childNode = aiPlayer(newGame, depth - 1, alpha, beta, false);
-                currentNode.addChild(childNode);
-                const evaluation = childNode.value.evaluation;
-                if (evaluation > maxEval) {
-                    maxEval = evaluation;
-                    bestMove = {
-                        piece: cloneDeep(currentPiece),
-                        newPosition: cloneDeep(possibleMoves[j]),
-                    };
-                }
-                alpha = Math.max(alpha, evaluation);
-                if (beta <= alpha) {
-                    break;
-                }
+        const allMoves = getAllPossibleMoves(game);
+        for (let i = 0; i < allMoves.length; i++) {
+            const move = allMoves[i];
+            const newGame = getNewGameInstance(game);
+            newGame.movePiece(move.from, move.to);
+            const childNode = aiPlayer(newGame, depth - 1, alpha, beta, false);
+            currentNode.addChild(childNode);
+            const evaluation = childNode.value.evaluation;
+            if (evaluation > maxEval) {
+                maxEval = evaluation;
+                bestMove = {
+                    piece: { ...move.from },
+                    newPosition: { ...move.to },
+                };
+            }
+            alpha = Math.max(alpha, maxEval);
+            if (beta <= alpha) {
+                break;
             }
         }
         currentNode.value = { evaluation: maxEval, bestMove };
@@ -439,27 +452,24 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
         const currentNode = new TreeNode({}, cloneDeep(game.board));
         let minEval = Infinity;
         let bestMove = null;
-        const movablePieces = game.getPlayerMovablePieces(game.turn);
-        for (let i = 0; i < movablePieces.length; i++) {
-            const currentPiece = movablePieces[i];
-            const possibleMoves = game.findPiecePossibleMoves(currentPiece.row, currentPiece.col);
-            for (let j = 0; j < possibleMoves.length; j++) {
-                const newGame = getNewGameInstance(game);
-                newGame.movePiece(currentPiece, possibleMoves[j]);
-                const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, true);
-                currentNode.addChild(childNode);
-                const evaluation = childNode.value.evaluation;
-                if (evaluation < minEval) {
-                    minEval = evaluation;
-                    bestMove = {
-                        piece: cloneDeep(currentPiece),
-                        newPosition: cloneDeep(possibleMoves[j]),
-                    };
-                }
-                beta = Math.min(beta, evaluation);
-                if (beta <= alpha) {
-                    break;
-                }
+        const allMoves = getAllPossibleMoves(game);
+        for (let i = 0; i < allMoves.length; i++) {
+            const move = allMoves[i];
+            const newGame = getNewGameInstance(game);
+            newGame.movePiece(move.from, move.to);
+            const childNode = aiPlayer(newGame, depth - 1, alpha, beta, true);
+            currentNode.addChild(childNode);
+            const evaluation = childNode.value.evaluation;
+            if (evaluation < minEval) {
+                minEval = evaluation;
+                bestMove = {
+                    piece: { ...move.from },
+                    newPosition: { ...move.to },
+                };
+            }
+            beta = Math.min(beta, minEval);
+            if (beta <= alpha) {
+                break;
             }
         }
         currentNode.value = { evaluation: minEval, bestMove };
