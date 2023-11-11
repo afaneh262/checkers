@@ -26,7 +26,7 @@ const App = () => {
                     }}
                 ></Start>
             )}
-            {selectedStage === stages.game && (
+            {[stages.game, stages.end].includes(selectedStage) && (
                 <Game
                     gameConfig={gameConfig}
                     onStartNewGame={() => {
@@ -43,6 +43,9 @@ const App = () => {
                     game={endedGame}
                     onStartNewGame={() => {
                         setSelectedStage(stages.start);
+                    }}
+                    onViewBoard={() => {
+                        setSelectedStage(stages.game);
                     }}
                 ></End>
             )}

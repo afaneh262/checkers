@@ -1,291 +1,236 @@
-const cloneDeep = (source) => {
-    if (source === null || typeof source !== 'object') {
-        return source;
-    }
-
-    const target = Array.isArray(source) ? [] : {};
-
-    for (const key in source) {
-        if (Object.prototype.hasOwnProperty.call(source, key)) {
-            target[key] = cloneDeep(source[key]);
-        }
-    }
-
-    return target;
-};
+import { cloneDeep } from 'lodash';
 
 export const PlayerTypes = {
     Ai: 'ai',
-    'Human': 'human'
+    Human: 'human',
 };
 
 export const Levels = {
-    'Easy': 1,
-    'Medium': 3,
-    'Hard': 5
+    Easy: 1,
+    Medium: 3,
+    Hard: 5,
 };
 
 export const Players = {
     Player1: 'player1',
-    Player2: 'player2'
+    Player2: 'player2',
 };
 
 export const PlayersColors = {
     [Players.Player1]: '#000',
-    [Players.Player2]: '#fff'
+    [Players.Player2]: '#fff',
 };
 
 export const PlayersNames = {
     [Players.Player1]: 'Player 1',
-    [Players.Player2]: 'Player 2'
+    [Players.Player2]: 'Player 2',
 };
 
 export const InitalPlayerToStart = Players.Player1;
 
 export const BoardConfig = {
     row: 8,
-    col: 8
+    col: 8,
 };
 
-const getMoveDirections = (player, isKing) => {
-    if (isKing) {
+export class CheckersGame {
+    constructor(players, initalPlayerToStart) {
+        this.players = players;
+        this.initalPlayerToStart = initalPlayerToStart;
+        this.turn = initalPlayerToStart;
+        this.killedPieces = [];
+        this.winner = null;
+        this.board = (function () {
+            return Array.from({ length: BoardConfig.row }, (_, row) =>
+                Array.from({ length: BoardConfig.col }, (_, col) => {
+                    const isRowForPlayer1 = row < 3;
+                    const isRowForPlayer2 = row > 4;
+                    const isOddRow = row % 2 === 1;
+                    const isOddColumn = col % 2 === 1;
+                    const isPiecePosition =
+                        (isRowForPlayer1 || isRowForPlayer2) && isOddRow !== isOddColumn;
+                    const player = isPiecePosition
+                        ? row < 3
+                            ? Players.Player1
+                            : Players.Player2
+                        : undefined;
+                    return {
+                        owner: player,
+                        row,
+                        col,
+                        isKing: false,
+                        isSelected: false,
+                    };
+                }),
+            );
+        })();
+        this.highlighBoard();
+    }
+
+    isValidPosition(row, col) {
+        return row >= 0 && row < BoardConfig.row && col >= 0 && col < BoardConfig.col;
+    }
+
+    getOpponent(player) {
+        return player === Players.Player1 ? Players.Player2 : Players.Player1;
+    }
+
+    getMoveDirections(player, isKing) {
+        // moving in all cases
+        if (isKing) {
+            return [
+                [1, 1],
+                [1, -1],
+                [-1, 1],
+                [-1, -1],
+            ];
+        }
+
+        // moving down
+        if (player === Players.Player1) {
+            return [
+                [1, 1],
+                [1, -1],
+            ];
+        }
+
+        // moving up
         return [
-            [1, 1],
-            [1, -1],
             [-1, 1],
             [-1, -1],
         ];
     }
 
-    if (player === Players.Player1) {
-        return [
-            [1, 1],
-            [1, -1],
-        ];
-    }
+    movePiece(currentPosition, newPosition) {
+        const killedPieces = [];
+        const currentPiece = this.board[currentPosition.row][currentPosition.col];
+        const newPiece = this.board[newPosition.row][newPosition.col];
 
-    return [
-        [-1, 1],
-        [-1, -1],
-    ];
-};
+        newPiece.owner = cloneDeep(currentPiece.owner);
+        newPiece.isKing = currentPiece.isKing ? true : false;
+        newPiece.isSelected = false;
 
-const getPlayerPieces = (board, player) => {
-    const pieces = [];
-    for (let row = 0; row < board.length; row++) {
-        for (let col = 0; col < board[row].length; col++) {
-            const { owner } = board[row][col];
-            if (owner === player) {
-                pieces.push(cloneDeep(board[row][col]));
-            }
+        const jumpedRow = (currentPosition.row + newPosition.row) / 2;
+        const jumpedCol = (currentPosition.col + newPosition.col) / 2;
+        const jumpedPiece = this.board[jumpedRow]?.[jumpedCol];
+        if (jumpedPiece && jumpedPiece.owner && jumpedPiece.owner !== currentPiece.owner) {
+            killedPieces.push(cloneDeep(jumpedPiece));
+            jumpedPiece.owner = null;
+            jumpedPiece.isKing = false;
         }
-    }
-
-    return pieces;
-};
-
-export const buildInitialBoard = (players) => {
-    return Array.from({ length: BoardConfig.row }, (_, row) =>
-        Array.from({ length: BoardConfig.col }, (_, col) => {
-            const isRowForPlayer1 = row < 3;
-            const isRowForPlayer2 = row > 4;
-            const isOddRow = row % 2 === 1;
-            const isOddColumn = col % 2 === 1;
-            const isPiecePosition =
-                (isRowForPlayer1 || isRowForPlayer2) && isOddRow !== isOddColumn;
-            const player = isPiecePosition ? (row < 3 ? players[Players.Player1] : players[Players.Player2]) : undefined;
-            return {
-                id: `${row}-${col}`,
-                owner: player,
-                coordinates: { row, col },
-                isKing: false,
-                isSelected: false,
-            };
-        }),
-    );
-};
-
-const movePiece = (board, currentPosition, newPosition) => {
-    const killedPieces = [];
-    const newBoard = cloneDeep(board);
-
-    const currentPiece = newBoard[currentPosition.row][currentPosition.col];
-    const newPiece = newBoard[newPosition.row][newPosition.col];
-
-    newPiece.owner = currentPiece.owner;
-    newPiece.isKing = currentPiece.isKing ? true : false;
-    newPiece.isSelected = false;
-
-    // Check if there's an opponent's piece that has been jumped over
-    const jumpedRow = (currentPosition.row + newPosition.row) / 2;
-    const jumpedCol = (currentPosition.col + newPosition.col) / 2;
-    const jumpedPiece = newBoard[jumpedRow]?.[jumpedCol];
-    if (jumpedPiece && jumpedPiece.owner && jumpedPiece.owner !== currentPiece.owner) {
-        killedPieces.push(cloneDeep(jumpedPiece));
-        // If there's a jumped piece, set its owner to null to indicate it's been taken
-        jumpedPiece.owner = null;
-        jumpedPiece.isKing = false; // Reset king status if it was a king
-    }
-
-    if (
-        (newPiece.owner?.id === Players.Player1 && newPosition.row === 7) ||
-        (newPiece.owner?.id === Players.Player2 && newPosition.row === 0)
-    ) {
-        newPiece.isKing = true;
-    }
-
-    currentPiece.owner = null;
-    currentPiece.isSelected = false;
-    currentPiece.isKing = false;
-
-    return {
-        board: newBoard,
-        killedPieces: killedPieces,
-    };
-};
-
-export const highlighBoard = (board, turn, selectedPiece) => {
-    const possibleMoves = findPiecePossibleMoves(cloneDeep(board), turn, cloneDeep(selectedPiece));
-    const movablePieces = getMovablePieces(cloneDeep(board), turn);
-    const newBoard = board.map((row) => {
-        return row.map((col) => {
-            return {
-                ...col,
-                isSelected: col.id == selectedPiece?.id,
-                isMovable: movablePieces.some(
-                    (entry) => entry.id === col.id,
-                ),
-                isPossibleMove: possibleMoves.some(
-                    (entry) => entry.id == col.id,
-                ),
-            };
-        });
-    });
-
-    return newBoard;
-};
-
-const getOpponent = (currentPlayer) => {
-    return currentPlayer === Players.Player1 ? Players.Player2 : Players.Player1;
-};
-
-const canPieceMove = (row, col, player, isKing, board) => {
-    const directions = getMoveDirections(player, isKing);
-
-    for (const [rowDirection, colDirection] of directions) {
-        const newRow = row + rowDirection;
-        const newCol = col + colDirection;
-        const jumpRow = newRow + rowDirection;
-        const jumpCol = newCol + colDirection;
 
         if (
-            jumpRow >= 0 &&
-            jumpRow < BoardConfig.row &&
-            jumpCol >= 0 &&
-            jumpCol < BoardConfig.col &&
-            !board[jumpRow][jumpCol].owner?.id &&
-            board[newRow][newCol].owner?.id === getOpponent(player)
+            (newPiece.owner === Players.Player1 && newPosition.row === 7) ||
+            (newPiece.owner === Players.Player2 && newPosition.row === 0)
         ) {
-            return true;
-        } else if (
-            newRow >= 0 &&
-            newRow < BoardConfig.row &&
-            newCol >= 0 &&
-            newCol < BoardConfig.col &&
-            !board[newRow][newCol].owner?.id
-        ) {
-            return true;
+            newPiece.isKing = true;
         }
+
+        currentPiece.owner = null;
+        currentPiece.isSelected = false;
+        currentPiece.isKing = false;
+
+        this.killedPieces = this.killedPieces.concat(killedPieces);
+        this.selectedPiece = null;
+        this.updateWinner();
+        this.turn = this.getOpponent(this.turn);
+        this.highlighBoard();
     }
 
-    return false;
-};
+    selectPiece(row, col) {
+        this.selectedPiece = this.board[row][col];
+        this.highlighBoard();
+    }
 
-const getMovablePieces = (board, player) => {
-    const newBoard = cloneDeep(board);
-    const movablePieces = [];
+    highlighBoard() {
+        const possibleMoves = this.selectedPiece
+            ? this.findPiecePossibleMoves(this.selectedPiece.row, this.selectedPiece.col)
+            : [];
+        const movablePieces = this.getPlayerMovablePieces(this.turn);
 
-    for (let row = 0; row < newBoard.length; row++) {
-        for (let col = 0; col < newBoard[row].length; col++) {
-            const { owner, isKing } = newBoard[row][col];
-            if (owner?.id === player) {
-                if (canPieceMove(row, col, player, isKing, newBoard)) {
-                    movablePieces.push(newBoard[row][col]);
-                }
+        for (let row = 0; row < this.board.length; row++) {
+            for (let col = 0; col < this.board[row].length; col++) {
+                this.board[row][col].isSelected =
+                    this.selectedPiece?.row === row && this.selectedPiece?.col === col
+                        ? true
+                        : false;
+                this.board[row][col].isMovable = movablePieces.some(
+                    (entry) => entry.row === row && entry.col === col,
+                );
+                this.board[row][col].isPossibleMove = possibleMoves.some(
+                    (entry) => entry.row === row && entry.col === col,
+                );
             }
         }
     }
 
-    return cloneDeep(movablePieces);
-};
-
-const findPiecePossibleMoves = (board, player, selectedPiece) => {
-    let possibleMoves = [];
-    if (!selectedPiece) {
-        return possibleMoves;
-    }
-
-    const getOpponent = (currentPlayer) => {
-        return currentPlayer === Players.Player1 ? Players.Player2 : Players.Player1;
-    };
-
-    const getMoves = (row, col, player, isKing, board) => {
-        const moves = [];
-        const jumps = [];
-        const directions = getMoveDirections(player, isKing);
+    findPiecePossibleMoves(row, col) {
+        let possibleMoves = [];
+        const { isKing, owner } = this.board[row][col];
+        const directions = this.getMoveDirections(owner, isKing);
         for (const [rowDirection, colDirection] of directions) {
             const newRow = row + rowDirection;
             const newCol = col + colDirection;
             const jumpRow = newRow + rowDirection;
             const jumpCol = newCol + colDirection;
             if (
-                jumpRow >= 0 &&
-                jumpRow < BoardConfig.row &&
-                jumpCol >= 0 &&
-                jumpCol < BoardConfig.col &&
-                !board[jumpRow][jumpCol].owner?.id &&
-                board[newRow][newCol]?.owner?.id === getOpponent(player)
+                this.isValidPosition(jumpRow, jumpCol) &&
+                !!!this.board[jumpRow][jumpCol].owner &&
+                this.board[newRow][newCol].owner === this.getOpponent(owner)
             ) {
-                jumps.push(cloneDeep(board[jumpRow][jumpCol]));
+                possibleMoves.push({ row: jumpRow, col: jumpCol });
             } else if (
-                newRow >= 0 &&
-                newRow < BoardConfig.row &&
-                newCol >= 0 &&
-                newCol < BoardConfig.col &&
-                !!!board[newRow][newCol]?.owner?.id
+                this.isValidPosition(newRow, newCol) &&
+                !!!this.board[newRow][newCol]?.owner
             ) {
-                moves.push(cloneDeep(board[newRow][newCol]));
+                possibleMoves.push({ row: newRow, col: newCol });
             }
         }
 
-        return { moves, jumps };
-    };
+        return possibleMoves;
+    }
 
-    const { owner, isKing } = selectedPiece;
-    if (owner?.id === player) {
-        const { moves, jumps } = getMoves(
-            selectedPiece.coordinates.row,
-            selectedPiece.coordinates.col,
-            player,
-            isKing,
-            cloneDeep(board),
-        );
-        if (jumps.length > 0) {
-            possibleMoves = possibleMoves.concat(jumps);
+    getPlayerMovablePieces(player) {
+        const movablePieces = [];
+
+        for (let row = 0; row < this.board.length; row++) {
+            for (let col = 0; col < this.board[row].length; col++) {
+                const { owner } = this.board[row][col];
+                if (owner === player) {
+                    const pieceMoves = this.findPiecePossibleMoves(row, col);
+                    if (pieceMoves.length > 0) {
+                        movablePieces.push({ row, col });
+                    }
+                }
+            }
         }
-        if (moves.length > 0) {
-            possibleMoves = possibleMoves.concat(moves);
+
+        return movablePieces;
+    }
+
+    updateWinner() {
+        const opponent = this.getOpponent(this.turn);
+        const opponentMovablePieces = this.getPlayerMovablePieces(opponent);
+        if (opponentMovablePieces.length === 0) {
+            const currentTurnMovablePieces = this.getPlayerMovablePieces(this.turn);
+            if (currentTurnMovablePieces.length > 0) {
+                this.winner = this.turn;
+            } else {
+                this.winner = 'draw';
+            }
         }
     }
 
-    return possibleMoves;
-};
+    isEnd() {
+        return !!this.winner;
+    }
+}
 
 const mobilityWeight = 1;
 const centerControlWeight = 2; // Increased weight for center control
 const threatWeight = 2;
 
-const evaluateBoard = (board) => {
+const evaluateGame = (game) => {
     let player1Score = 0;
     let player2Score = 0;
     let player1Mobility = 0;
@@ -295,15 +240,18 @@ const evaluateBoard = (board) => {
     let player1CenterControl = 0;
     let player2CenterControl = 0;
 
-    const centerRowsAndCols = [Math.floor(board.length / 2), Math.floor(board.length / 2) + 1]; // Rows that contribute to center control
+    const centerRowsAndCols = [
+        Math.floor(game.board.length / 2),
+        Math.floor(game.board.length / 2) + 1,
+    ]; // Rows that contribute to center control
 
-    for (let row = 0; row < board.length; row++) {
-        for (let col = 0; col < board[row].length; col++) {
-            const { owner, isKing } = board[row][col];
-            if (owner?.id === Players.Player1) {
+    for (let row = 0; row < game.board.length; row++) {
+        for (let col = 0; col < game.board[row].length; col++) {
+            const { owner, isKing } = game.board[row][col];
+            if (owner === Players.Player1) {
                 player1Score += isKing ? 5 : 3;
-                player1Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player1, board[row][col]).length;
-                if (isPieceThreatened(cloneDeep(board), row, col)) {
+                player1Mobility += game.findPiecePossibleMoves(row, col).length;
+                if (isPieceThreatened(cloneDeep(game.board), row, col)) {
                     player1Threats--;
                 }
                 if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
@@ -311,8 +259,8 @@ const evaluateBoard = (board) => {
                 }
             } else if (owner?.id === Players.Player2) {
                 player2Score += isKing ? 5 : 3;
-                player2Mobility += findPiecePossibleMoves(cloneDeep(board), Players.Player2, board[row][col]).length;
-                if (isPieceThreatened(cloneDeep(board), row, col)) {
+                player2Mobility += game.findPiecePossibleMoves(row, col).length;
+                if (isPieceThreatened(cloneDeep(game.board), row, col)) {
                     player2Threats--;
                 }
                 if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
@@ -322,12 +270,16 @@ const evaluateBoard = (board) => {
         }
     }
 
-    player1Score += player1Mobility * mobilityWeight + player1CenterControl * centerControlWeight + player1Threats * threatWeight;
-    player2Score += player2Mobility * mobilityWeight + player2CenterControl * centerControlWeight + player2Threats * threatWeight;
+    player1Score +=
+        player1Mobility * mobilityWeight +
+        player1CenterControl * centerControlWeight +
+        player1Threats * threatWeight;
+    player2Score +=
+        player2Mobility * mobilityWeight +
+        player2CenterControl * centerControlWeight +
+        player2Threats * threatWeight;
     return player2Score - player1Score;
 };
-
-
 
 // Function to check if a piece is threatened
 const isPieceThreatened = (board, row, col) => {
@@ -337,51 +289,51 @@ const isPieceThreatened = (board, row, col) => {
             {
                 offset: { row: 1, col: 1 },
                 jump: { row: -1, col: -1 },
-                isKing: false
+                isKing: false,
             },
             {
                 offset: { row: 1, col: -1 },
                 jump: { row: -1, col: 1 },
-                isKing: false
+                isKing: false,
             },
             {
                 offset: { row: -1, col: -1 },
                 jump: { row: 1, col: 1 },
-                isKing: true
+                isKing: true,
             },
             {
                 offset: { row: -1, col: 1 },
                 jump: { row: 1, col: -1 },
-                isKing: true
+                isKing: true,
             },
         ],
         [Players.Player2]: [
             {
                 offset: { row: -1, col: -1 },
                 jump: { row: 1, col: 1 },
-                isKing: false
+                isKing: false,
             },
             {
                 offset: { row: -1, col: 1 },
                 jump: { row: 1, col: -1 },
-                isKing: false
+                isKing: false,
             },
             {
                 offset: { row: 1, col: 1 },
                 jump: { row: -1, col: -1 },
-                isKing: true
+                isKing: true,
             },
             {
                 offset: { row: 1, col: -1 },
                 jump: { row: -1, col: 1 },
-                isKing: true
+                isKing: true,
             },
-        ]
+        ],
     };
 
     const owner = board[row][col]?.owner?.id;
     const offsets = owner && surroundingOffsets[owner];
-    if(!owner || !offsets) {
+    if (!owner || !offsets) {
         return false;
     }
 
@@ -392,7 +344,12 @@ const isPieceThreatened = (board, row, col) => {
         const newCol = col + entry.offset.col;
         const newRowJump = row + entry.jump.row;
         const newColJump = col + entry.jump.col;
-        if (isValidPosition(newRow, newCol) && board[newRow][newCol]?.owner?.id === opponent && board[newRow][newCol].isKing == entry.isKing && !board[newRowJump][newColJump]?.owner?.id) {
+        if (
+            isValidPosition(newRow, newCol) &&
+            board[newRow][newCol]?.owner?.id === opponent &&
+            board[newRow][newCol].isKing == entry.isKing &&
+            !board[newRowJump][newColJump]?.owner?.id
+        ) {
             return true;
         }
     }
@@ -400,10 +357,17 @@ const isPieceThreatened = (board, row, col) => {
     return false;
 };
 
+export const getNewGameInstance = (original) => {
+    const serialized = JSON.stringify(original);
+    const copy = JSON.parse(serialized);
+    return Object.setPrototypeOf(copy, Object.getPrototypeOf(original));
+};
+
 class TreeNode {
-    constructor(value) {
-        this.value = value;
+    constructor(value, board) {
+        this.board = board;
         this.children = [];
+        this.value = value;
     }
 
     addChild(node) {
@@ -412,35 +376,32 @@ class TreeNode {
 }
 
 const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
-    if (depth === 0 || game.isEnd) {
-        const evaluation = evaluateBoard(cloneDeep(game.board));
-        return new TreeNode({ evaluation, board: cloneDeep(game.board) });
+    if (depth === 0 || game.isEnd()) {
+        const evaluation = evaluateGame(game);
+        return new TreeNode({ evaluation }, cloneDeep(game.board));
     }
 
     if (maximizingPlayer) {
-        const currentNode = new TreeNode({});
+        const currentNode = new TreeNode({}, cloneDeep(game.board));
         let maxEval = -Infinity;
         let bestMove = null;
-        let theResultBoard = null;
-        const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
+        const movablePieces = game.getPlayerMovablePieces(game.turn);
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
-            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
+            const possibleMoves = game.findPiecePossibleMoves(currentPiece.row, currentPiece.col);
             for (let j = 0; j < possibleMoves.length; j++) {
-                debugger;
-                const newGame = moveGamePiece(cloneDeep(game), possibleMoves[j], currentPiece);
-                debugger;
-                const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, false);
-                debugger;
+                const newGame = getNewGameInstance(game);
+                newGame.movePiece(currentPiece, possibleMoves[j]);
+                const childNode = aiPlayer(newGame, depth - 1, alpha, beta, false);
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
+                const board = childNode.value.board;
                 if (evaluation > maxEval) {
                     maxEval = evaluation;
                     bestMove = {
                         piece: cloneDeep(currentPiece),
                         newPosition: cloneDeep(possibleMoves[j]),
                     };
-                    theResultBoard = cloneDeep(newGame.board);
                 }
                 alpha = Math.max(alpha, evaluation);
                 if (beta <= alpha) {
@@ -448,29 +409,29 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: maxEval, bestMove, board: cloneDeep(game.board) };
+        currentNode.value = { evaluation: maxEval, bestMove };
         return currentNode;
     } else {
-        const currentNode = new TreeNode({});
+        const currentNode = new TreeNode({}, cloneDeep(game.board));
         let minEval = Infinity;
         let bestMove = null;
-        let theResultBoard = null;
-        const movablePieces = getMovablePieces(cloneDeep(game.board), game.turn);
+        const movablePieces = game.getPlayerMovablePieces(game.turn);
         for (let i = 0; i < movablePieces.length; i++) {
             const currentPiece = movablePieces[i];
-            const possibleMoves = findPiecePossibleMoves(cloneDeep(game.board), game.turn, currentPiece);
+            const possibleMoves = game.findPiecePossibleMoves(currentPiece.row, currentPiece.col);
             for (let j = 0; j < possibleMoves.length; j++) {
-                const newGame = moveGamePiece(cloneDeep(game), possibleMoves[j], currentPiece);
+                const newGame = getNewGameInstance(game);
+                newGame.movePiece(currentPiece, possibleMoves[j]);
                 const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, true);
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
+                const board = childNode.value.board;
                 if (evaluation < minEval) {
                     minEval = evaluation;
                     bestMove = {
                         piece: cloneDeep(currentPiece),
                         newPosition: cloneDeep(possibleMoves[j]),
                     };
-                    theResultBoard = cloneDeep(newGame.board);
                 }
                 beta = Math.min(beta, evaluation);
                 if (beta <= alpha) {
@@ -478,94 +439,12 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 }
             }
         }
-        currentNode.value = { evaluation: minEval, bestMove, board: cloneDeep(game.board) };
+        currentNode.value = { evaluation: minEval, bestMove };
         return currentNode;
     }
 };
 
-
-
-///
-export const selectGamePiece = (game, piece) => {
-    const newBoard = highlighBoard(cloneDeep(game.board), game.turn, piece);
-    const newGame = {
-        ...game,
-        board: newBoard,
-        selectedPiece: piece,
-    };
-
-    return newGame;
-};
-
-export const moveGamePiece = (game, newPosition, selectedPiece2) => {
-    const {
-        selectedPiece,
-        turn,
-        board,
-        killedPieces
-    } = game;
-    const opponent = getOpponent(turn);
-    const clonedBoard = cloneDeep(board);
-    const selectedPiece3 = selectedPiece || selectedPiece2;
-
-    let isEnd = false;
-    let winner = null;
-    const { board: updatedBoard, killedPieces: newKilledPieces } = movePiece(
-        clonedBoard,
-        selectedPiece3.coordinates,
-        newPosition.coordinates,
-    );
-    debugger;
-
-    // check if game ended
-    const opponentMovablePieces = getMovablePieces(cloneDeep(updatedBoard), opponent);
-    if (opponentMovablePieces.length === 0) {
-        isEnd = true;
-        const currentTurnMovablePieces = getMovablePieces(cloneDeep(updatedBoard), turn);
-        if (currentTurnMovablePieces.length > 0) {
-            winner = turn;
-        } else {
-            winner = 'draw'
-        }
-    }
-
-    const newGame = {
-        ...game,
-        board: highlighBoard(cloneDeep(updatedBoard), opponent, null),
-        selectedPiece: null,
-        turn: opponent,
-        isEnd,
-        winner,
-        killedPieces: (killedPieces || []).concat(newKilledPieces)
-    };
-
-    debugger;
-    return newGame;
-};
-
-const isValidPosition = (row, col) => {
-    return row >= 0 && row < BoardConfig.row && col >= 0 && col < BoardConfig.col;
-};
-
 export const playAi = (game, depth) => {
-    const gameTree = aiPlayer(
-        cloneDeep(game),
-        depth, // specify the desired depth for the search
-        -Infinity,
-        Infinity,
-        true,
-    );
-
-    const { bestMove } = gameTree.value;
-    const { piece, newPosition } = bestMove;
-    const newGame = moveGamePiece(cloneDeep(game), newPosition, piece);
-
-    return { newGame, bestMove, gameTree };
-}
-
-function delay(seconds) {
-    return new Promise(resolve => {
-        setTimeout(resolve, seconds * 1000);
-    });
-}
-
+    const gameTree = aiPlayer(game, depth, -Infinity, Infinity, true);
+    return gameTree;
+};

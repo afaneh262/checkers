@@ -30,7 +30,7 @@ const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move
                 {move?.piece && (
                     <div className="PlayerTile__Move">
                         <div>
-                            <small>{`[${move?.piece?.coordinates.row}, ${move?.piece?.coordinates?.col}] -> [${move?.newPosition?.coordinates.row}, ${move?.newPosition?.coordinates?.col}]`}</small>
+                            <small>{`[${move?.piece?.row}, ${move?.piece?.col}] -> [${move?.newPosition?.row}, ${move?.newPosition?.col}]`}</small>
                         </div>
                         <div>
                             <small onClick={onShowMoveTree} style={{textDecoration: 'underline', cursor: 'pointer', fontWeight: 700}}>Show move tree</small>
@@ -40,7 +40,7 @@ const PlayerWidget = ({ player, numberOfPiecesHeKilled, isActive, opponent, move
             </div>
             {isActive && (
                 <div className="Action">
-                    {player.type === PlayerTypes.Ai ? 'Thinking...' : 'Your Turn'}
+                    {player?.type === PlayerTypes.Ai ? 'Thinking...' : 'Your Turn'}
                 </div>
             )}
         </div>

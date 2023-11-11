@@ -3,8 +3,11 @@ import clsx from 'clsx';
 import './styles.scss';
 import kingIcon from './crown.svg';
 import kingBlackIcon from './crown-black.svg';
+import {
+    PlayersColors
+} from '../../utils';
 
-const Piece = ({ piece, handleClick }) => {
+const Piece = ({ piece, handleClick, players }) => {
     const renderSquareContent = (piece) => {
         if (piece.owner) {
             return (
@@ -19,12 +22,12 @@ const Piece = ({ piece, handleClick }) => {
                         }
                     }}
                     style={{
-                        backgroundColor: piece.owner.color,
+                        backgroundColor: players[piece.owner].color,
                     }}
                 >
                     {piece.isKing ? (
                         <div className="IsKing">
-                            <img src={piece.owner.color === '#000' ? kingIcon : kingBlackIcon} />
+                            <img src={players[piece.owner].color === '#000' ? kingIcon : kingBlackIcon} />
                         </div>
                     ) : null}
                 </div>

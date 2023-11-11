@@ -5,34 +5,16 @@ import Tree from 'react-d3-tree';
 import {
     PlayerTypes,
     Players,
-    selectGamePiece,
-    moveGamePiece,
-    playAi,
-    buildInitialBoard,
-    highlighBoard,
     PlayersColors,
+    CheckersGame,
+    playAi,
+    getNewGameInstance,
 } from './../../utils';
 
 import PlayerWidget from '../PlayerWidget';
 import Piece from '../Piece';
 
 import './styles.scss';
-
-const buildGameState = (gameConfig) => {
-    const { level, players, initalPlayerToStart } = gameConfig;
-
-    let board = buildInitialBoard(players);
-    board = highlighBoard(board, initalPlayerToStart);
-    return {
-        board,
-        isEnd: false,
-        turn: initalPlayerToStart,
-        players,
-        level,
-        selectedPiece: null,
-        killedPieces: [],
-    };
-};
 
 const cellSize = 20; // Adjust this according to your needs
 
@@ -49,13 +31,21 @@ const renderCheckerPiece = (value, x, y) => {
     if (value.isKing) {
         return (
             <g>
-                <circle {...circleStyle} fill={value.owner.color} />
-                <circle {...circleStyle} r={circleStyle.r / 2} fill={value.owner.id === Players.Player1 ? PlayersColors[Players.Player2] : PlayersColors[Players.Player1]} />
+                <circle {...circleStyle} fill={PlayersColors[value.owner]} />
+                <circle
+                    {...circleStyle}
+                    r={circleStyle.r / 2}
+                    fill={
+                        value.owner === Players.Player1
+                            ? PlayersColors[Players.Player2]
+                            : PlayersColors[Players.Player1]
+                    }
+                />
             </g>
         );
     }
 
-    return <circle {...circleStyle} fill={value.owner.color} />;
+    return <circle {...circleStyle} fill={PlayersColors[value.owner]} />;
 };
 
 const CheckersBoard = ({ board, handleClick }) => {
@@ -80,7 +70,9 @@ const CheckersBoard = ({ board, handleClick }) => {
 };
 
 const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
-    const [game, setGame] = useState(buildGameState(gameConfig));
+    const [game, setGame] = useState(
+        () => new CheckersGame(gameConfig.players, gameConfig.initalPlayerToStart),
+    );
     const [player1Move, setPlayer1Move] = useState({});
     const [player2Move, setPlayer2Move] = useState({});
     const [player1Tree, setPlayer1Tree] = useState(null);
@@ -90,20 +82,32 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
 
     useEffect(() => {
         const init = () => {
-            debugger;
-            const { newGame, bestMove, gameTree } = playAi(cloneDeep(game), gameConfig.level);
-            console.log({gameTree});
-            setGame(newGame);
-            if (game.turn === Players.Player1) {
-                setPlayer1Move(bestMove);
+            const gameTree = playAi(game, gameConfig.level);
+            const {
+                value: {
+                    bestMove: { piece, newPosition },
+                },
+            } = gameTree;
+            game.movePiece(
+                { row: piece.row, col: piece.col },
+                { row: newPosition.row, col: newPosition.col },
+            );
+            setGame((prevInstance) => {
+                const newInstance = Object.create(Object.getPrototypeOf(prevInstance));
+                Object.assign(newInstance, prevInstance);
+                return newInstance;
+            });
+            if (game.turn === Players.Player2) {
+                setPlayer1Move({ piece, newPosition });
                 setPlayer1Tree(gameTree);
-            } else if (game.turn === Players.Player2) {
-                setPlayer2Move(bestMove);
+            } else if (game.turn === Players.Player1) {
+                console.log({ gameTree });
+                setPlayer2Move({ piece, newPosition });
                 setPlayer2Tree(gameTree);
             }
         };
 
-        if (game.players[game.turn].type === PlayerTypes.Ai) {
+        if (game.players[game.turn].type === PlayerTypes.Ai && !game.isEnd()) {
             setTimeout(() => {
                 init();
             }, 100);
@@ -111,19 +115,30 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     }, [game.turn]);
 
     useEffect(() => {
-        if (game.isEnd) {
+        if (game.isEnd()) {
             onGameEnded(game);
         }
-    }, [game.isEnd]);
+    }, [game]);
 
     const onSelectPiece = (piece) => {
-        const newGame = selectGamePiece(cloneDeep(game), piece);
-        setGame(newGame);
+        game.selectPiece(piece.row, piece.col);
+        setGame((prevInstance) => {
+            const newInstance = Object.create(Object.getPrototypeOf(prevInstance));
+            Object.assign(newInstance, prevInstance);
+            return newInstance;
+        });
     };
 
     const onMovePiece = (piece) => {
-        const newGame = moveGamePiece(cloneDeep(game), piece);
-        setGame(newGame);
+        game.movePiece(
+            { row: game.selectedPiece.row, col: game.selectedPiece.col },
+            { row: piece.row, col: piece.col },
+        );
+        setGame((prevInstance) => {
+            const newInstance = Object.create(Object.getPrototypeOf(prevInstance));
+            Object.assign(newInstance, prevInstance);
+            return newInstance;
+        });
     };
 
     return (
@@ -142,8 +157,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         isActive={game.turn === Players.Player1}
                         player={game.players[Players.Player1]}
                         numberOfPiecesHeKilled={
-                            game.killedPieces?.filter((e) => e.owner?.id === Players.Player2)
-                                ?.length
+                            game.killedPieces?.filter((e) => e.owner === Players.Player2)?.length
                         }
                         opponent={game.players[Players.Player2]}
                         move={player1Move}
@@ -154,13 +168,13 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                     />
                 </div>
                 <div className="Board">
-                    {game.board.map((boardRow, rowIndex) => (
+                    {game.board.map((row, rowIndex) => (
                         <div className="Row" key={'Row' + rowIndex}>
-                            {boardRow.map((piece, colIndex) => {
+                            {row.map((col, colIndex) => {
                                 return (
                                     <Piece
                                         key={`Piece-${rowIndex}-${colIndex}`}
-                                        piece={piece}
+                                        piece={col}
                                         handleClick={(action, piece) => {
                                             if (action === 'selectPiece') {
                                                 onSelectPiece(piece);
@@ -168,6 +182,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                                                 onMovePiece(piece);
                                             }
                                         }}
+                                        players={game.players}
                                     />
                                 );
                             })}
@@ -179,8 +194,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         isActive={game.turn === Players.Player2}
                         player={game.players[Players.Player2]}
                         numberOfPiecesHeKilled={
-                            game.killedPieces?.filter((e) => e.owner?.id === Players.Player1)
-                                ?.length
+                            game.killedPieces?.filter((e) => e.owner === Players.Player1)?.length
                         }
                         opponent={game.players[Players.Player1]}
                         move={player2Move}
@@ -199,11 +213,14 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         collapsible={true}
                         nodeSize={{
                             x: 200,
-                            y: 200
+                            y: 200,
                         }}
                         renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
                             <g>
-                                <CheckersBoard board={nodeDatum.value.board} handleClick={toggleNode} />
+                                <CheckersBoard
+                                    board={nodeDatum.board}
+                                    handleClick={toggleNode}
+                                />
                                 <text fill="black" strokeWidth="1" x="20" onClick={toggleNode}>
                                     {nodeDatum.value.evaluation}
                                 </text>
