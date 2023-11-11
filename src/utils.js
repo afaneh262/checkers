@@ -67,11 +67,11 @@ export class CheckersGame {
         this.highlighBoard();
     }
 
-    isValidPosition(row, col) {
+    static isValidPosition(row, col) {
         return row >= 0 && row < BoardConfig.row && col >= 0 && col < BoardConfig.col;
     }
 
-    getOpponent(player) {
+    static getOpponent(player) {
         return player === Players.Player1 ? Players.Player2 : Players.Player1;
     }
 
@@ -133,7 +133,7 @@ export class CheckersGame {
         this.killedPieces = this.killedPieces.concat(killedPieces);
         this.selectedPiece = null;
         this.updateWinner();
-        this.turn = this.getOpponent(this.turn);
+        this.turn = CheckersGame.getOpponent(this.turn);
         this.highlighBoard();
     }
 
@@ -174,13 +174,13 @@ export class CheckersGame {
             const jumpRow = newRow + rowDirection;
             const jumpCol = newCol + colDirection;
             if (
-                this.isValidPosition(jumpRow, jumpCol) &&
+                CheckersGame.isValidPosition(jumpRow, jumpCol) &&
                 !!!this.board[jumpRow][jumpCol].owner &&
-                this.board[newRow][newCol].owner === this.getOpponent(owner)
+                this.board[newRow][newCol].owner === CheckersGame.getOpponent(owner)
             ) {
-                possibleMoves.push({ row: jumpRow, col: jumpCol });
+                possibleMoves.push({ row: jumpRow, col: jumpCol, isJump: true });
             } else if (
-                this.isValidPosition(newRow, newCol) &&
+                CheckersGame.isValidPosition(newRow, newCol) &&
                 !!!this.board[newRow][newCol]?.owner
             ) {
                 possibleMoves.push({ row: newRow, col: newCol });
@@ -209,7 +209,7 @@ export class CheckersGame {
     }
 
     updateWinner() {
-        const opponent = this.getOpponent(this.turn);
+        const opponent = CheckersGame.getOpponent(this.turn);
         const opponentMovablePieces = this.getPlayerMovablePieces(opponent);
         if (opponentMovablePieces.length === 0) {
             const currentTurnMovablePieces = this.getPlayerMovablePieces(this.turn);
@@ -229,61 +229,86 @@ export class CheckersGame {
 const mobilityWeight = 1;
 const centerControlWeight = 2; // Increased weight for center control
 const threatWeight = 2;
+const safePieceWeight = 1;
+const jumpWeight = 3;
 
 const evaluateGame = (game) => {
-    let player1Score = 0;
-    let player2Score = 0;
-    let player1Mobility = 0;
-    let player2Mobility = 0;
-    let player1Threats = 0;
-    let player2Threats = 0;
-    let player1CenterControl = 0;
-    let player2CenterControl = 0;
+    const scores = {
+        [Players.Player1]: {
+            score: 0,
+            mobility: 0,
+            threats: 0,
+            centerControl: 0,
+            safePieces: 0,
+            jumps: 0,
+        },
+        [Players.Player2]: {
+            score: 0,
+            mobility: 0,
+            threats: 0,
+            centerControl: 0,
+            safePieces: 0,
+            jumps: 0,
+        },
+    };
 
     const centerRowsAndCols = [
         Math.floor(game.board.length / 2),
         Math.floor(game.board.length / 2) + 1,
-    ]; // Rows that contribute to center control
+    ];
 
     for (let row = 0; row < game.board.length; row++) {
         for (let col = 0; col < game.board[row].length; col++) {
             const { owner, isKing } = game.board[row][col];
-            if (owner === Players.Player1) {
-                player1Score += isKing ? 5 : 3;
-                player1Mobility += game.findPiecePossibleMoves(row, col).length;
-                if (isPieceThreatened(cloneDeep(game.board), row, col)) {
-                    player1Threats--;
+            if (owner === Players.Player1 || owner === Players.Player2) {
+                const pieceMoves = game.findPiecePossibleMoves(row, col);
+                let numberOfPossibleMoves = 0;
+                let numberOfPossibleJumps = 0;
+                scores[owner].score += isKing ? 5 : 3;
+                pieceMoves.forEach((entry) => {
+                    if(entry.isJump) {
+                        numberOfPossibleJumps++;
+                    } else {
+                        numberOfPossibleMoves++;
+                    }
+                });
+                scores[owner].mobility += numberOfPossibleMoves;
+                scores[owner].jumps += numberOfPossibleJumps;
+                if (isPieceThreatened(game.board, row, col)) {
+                    scores[owner].threats -= 1;
+                } else {
+                    scores[owner].safePieces += 1;
                 }
                 if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
-                    player1CenterControl++;
-                }
-            } else if (owner?.id === Players.Player2) {
-                player2Score += isKing ? 5 : 3;
-                player2Mobility += game.findPiecePossibleMoves(row, col).length;
-                if (isPieceThreatened(cloneDeep(game.board), row, col)) {
-                    player2Threats--;
-                }
-                if (centerRowsAndCols.includes(row) && centerRowsAndCols.includes(col)) {
-                    player2CenterControl++;
+                    scores[owner].centerControl += 1;
                 }
             }
         }
     }
 
-    player1Score +=
-        player1Mobility * mobilityWeight +
-        player1CenterControl * centerControlWeight +
-        player1Threats * threatWeight;
-    player2Score +=
-        player2Mobility * mobilityWeight +
-        player2CenterControl * centerControlWeight +
-        player2Threats * threatWeight;
-    return player2Score - player1Score;
+    const player1TotalScore =
+        scores[Players.Player1].score +
+        scores[Players.Player1].mobility * mobilityWeight +
+        scores[Players.Player1].centerControl * centerControlWeight +
+        scores[Players.Player1].threats * threatWeight +
+        scores[Players.Player1].safePieces * safePieceWeight +
+        scores[Players.Player1].jumps * jumpWeight;
+
+    const player2TotalScore =
+        scores[Players.Player2].score +
+        scores[Players.Player2].mobility * mobilityWeight +
+        scores[Players.Player2].centerControl * centerControlWeight +
+        scores[Players.Player2].threats * threatWeight +
+        scores[Players.Player2].safePieces * safePieceWeight +
+        scores[Players.Player2].jumps * jumpWeight;
+
+    return game.turn === Players.Player1
+        ? player1TotalScore - player2TotalScore
+        : player2TotalScore - player1TotalScore;
 };
 
 // Function to check if a piece is threatened
 const isPieceThreatened = (board, row, col) => {
-    return false;
     const surroundingOffsets = {
         [Players.Player1]: [
             {
@@ -331,13 +356,13 @@ const isPieceThreatened = (board, row, col) => {
         ],
     };
 
-    const owner = board[row][col]?.owner?.id;
+    const owner = board[row][col].owner;
     const offsets = owner && surroundingOffsets[owner];
     if (!owner || !offsets) {
         return false;
     }
 
-    const opponent = getOpponent(owner);
+    const opponent = CheckersGame.getOpponent(owner);
 
     for (let entry of offsets) {
         const newRow = row + entry.offset.row;
@@ -345,15 +370,15 @@ const isPieceThreatened = (board, row, col) => {
         const newRowJump = row + entry.jump.row;
         const newColJump = col + entry.jump.col;
         if (
-            isValidPosition(newRow, newCol) &&
-            board[newRow][newCol]?.owner?.id === opponent &&
+            CheckersGame.isValidPosition(newRow, newCol) &&
+            CheckersGame.isValidPosition(newRowJump, newColJump) &&
+            board[newRow][newCol].owner === opponent &&
             board[newRow][newCol].isKing == entry.isKing &&
-            !board[newRowJump][newColJump]?.owner?.id
+            !!board[newRowJump][newColJump].owner
         ) {
             return true;
         }
     }
-
     return false;
 };
 
@@ -395,7 +420,6 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 const childNode = aiPlayer(newGame, depth - 1, alpha, beta, false);
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
-                const board = childNode.value.board;
                 if (evaluation > maxEval) {
                     maxEval = evaluation;
                     bestMove = {
@@ -425,7 +449,6 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
                 const childNode = aiPlayer(cloneDeep(newGame), depth - 1, alpha, beta, true);
                 currentNode.addChild(childNode);
                 const evaluation = childNode.value.evaluation;
-                const board = childNode.value.board;
                 if (evaluation < minEval) {
                     minEval = evaluation;
                     bestMove = {
