@@ -1,21 +1,19 @@
 .Game {
-    //width: 500px;
-    //margin: 0 auto;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
 .StartNewGameBtn {
-    position: absolute;
-    background-color: #7f5318;
+    padding: 10px;
+    font-size: 14px;
     color: #fff;
-    border: 2px solid #fff;
-    padding: 5px 10px;
-    box-shadow: none;
-    top: 0;
-    border-radius: 10px;
+    background: linear-gradient(to bottom, #a06927 0%, #8c3310 50%, #752201 51%, #7f5318 100%);
+    border-radius: 15px;
+    border: 5px solid #fff;
     cursor: pointer;
+    position: absolute;
+    top: 15px;
 }
 
 .Board {
@@ -31,6 +29,7 @@
             .Square:nth-child(2n) {
                 background-color: #e8b679;
             }
+
             .Square:nth-child(2n + 1) {
                 background-color: #bf8648;
             }
