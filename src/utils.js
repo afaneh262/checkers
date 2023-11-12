@@ -26,20 +26,25 @@ export const PlayersNames = {
     [Players.Player2]: 'Player 2',
 };
 
+export const Algos = {
+    MiniMax: 'minimax',
+    AlphaBetaPruning: 'alpha_beta_pruning'
+};
+
 export const InitalPlayerToStart = Players.Player1;
 
 export const BoardConfig = {
     row: 8,
     col: 8,
 };
-
 export class CheckersGame {
-    constructor(players, initalPlayerToStart) {
+    constructor(players, initalPlayerToStart, forceJump) {
         this.players = players;
         this.initalPlayerToStart = initalPlayerToStart;
         this.turn = initalPlayerToStart;
         this.killedPieces = [];
         this.winner = null;
+        this.forceJump = forceJump;
         this.board = (function () {
             return Array.from({ length: BoardConfig.row }, (_, row) =>
                 Array.from({ length: BoardConfig.col }, (_, col) => {
@@ -199,7 +204,7 @@ export class CheckersGame {
                 if (owner === player) {
                     const pieceMoves = this.findPiecePossibleMoves(row, col);
                     if (pieceMoves.length > 0) {
-                        movablePieces.push({ row, col });
+                        movablePieces.push({ row, col, moves: pieceMoves});
                     }
                 }
             }
@@ -404,8 +409,7 @@ const getAllPossibleMoves = (game) => {
     const allMoves = [];
     const movablePieces = game.getPlayerMovablePieces(game.turn);
     movablePieces.forEach((mPiece) => {
-        const mPieceMoves = game.findPiecePossibleMoves(mPiece.row, mPiece.col);
-        mPieceMoves.forEach((move) => {
+        mPiece.moves.forEach((move) => {
             allMoves.push({
                 from: { ...mPiece },
                 to: { ...move },

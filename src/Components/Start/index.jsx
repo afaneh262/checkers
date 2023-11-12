@@ -8,11 +8,41 @@ import {
     PlayersNames,
     Players,
     InitalPlayerToStart,
+    Algos,
 } from './../../utils';
 
 import './styles.scss';
 
+const RadioGroup = ({ title, choices, selectedChoice, onChange }) => {
+    return (
+        <div className='RadioGroup'>
+            <div className='RadioGroup__Title'>{title}</div>
+            <div className="RadioGroup__Choices">
+                {choices.map((entry) => {
+                    return (
+                        <div
+                            className="Choices__Choice"
+                            onClick={() => {
+                                onChange(entry.id);
+                            }}
+                        >
+                            <div
+                                className={clsx('Choice__Check', {
+                                    IsSelected: selectedChoice === entry.id,
+                                })}
+                            ></div>
+                            <div className="Choice__Name">{entry.name}</div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
 const Start = ({ onStart }) => {
+    const [forceJump, setForceJump] = useState(true);
+    const [selectedAlgo, setSelectedAlgo] = useState(Algos.AlphaBetaPruning);
     const [selectedLevel, setSelectedLevel] = useState(Levels.Medium);
     const [selectedPlayers, setSelectedPlayers] = useState([PlayerTypes.Human, PlayerTypes.Ai]);
 
@@ -81,9 +111,54 @@ const Start = ({ onStart }) => {
                     </div>
                 </div>
             )}
-            <div style={{
-                textAlign: 'center'
-            }}>
+            <div className="RulesAndAlog">
+                <div className="RulesAndAlgo__Title">Rules & Algo</div>
+                <div className="RulesAndAlgo__Body">
+                    <div
+                        style={{
+                            marginBottom: '15px',
+                        }}
+                    >
+                        <RadioGroup
+                            title={'Force Jump'}
+                            choices={[
+                                {
+                                    id: true,
+                                    name: 'Yes',
+                                },
+                                {
+                                    id: false,
+                                    name: 'No',
+                                },
+                            ]}
+                            selectedChoice={forceJump}
+                            onChange={(newVal) => {
+                                setForceJump(newVal);
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <RadioGroup
+                            title={'Algo'}
+                            choices={Object.keys(Algos).map((entry) => {
+                                return {
+                                    id: Algos[entry],
+                                    name: entry,
+                                };
+                            })}
+                            selectedChoice={selectedAlgo}
+                            onChange={(newVal) => {
+                                setSelectedAlgo(newVal);
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div
+                style={{
+                    textAlign: 'center',
+                }}
+            >
                 <button
                     className="StartBtn"
                     onClick={() => {
@@ -104,6 +179,8 @@ const Start = ({ onStart }) => {
                                 },
                             },
                             initalPlayerToStart: InitalPlayerToStart,
+                            forceJump: forceJump,
+                            alog: selectedAlgo
                         });
                     }}
                 >

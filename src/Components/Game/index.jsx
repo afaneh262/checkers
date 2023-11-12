@@ -15,6 +15,7 @@ import Piece from '../Piece';
 import './styles.scss';
 
 const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
+    console.log({gameConfig});
     const [game, setGame] = useState(
         () => new CheckersGame(gameConfig.players, gameConfig.initalPlayerToStart),
     );
