@@ -441,7 +441,7 @@ const getAllPossibleMoves = (game) => {
     return allMoves;
 };
 
-const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
+const findBestMoveByAlphaBeta = (game, depth, alpha, beta, maximizingPlayer) => {
     if (depth === 0 || game.isEnd()) {
         const evaluation = evaluateGame(game);
         return new TreeNode({ evaluation }, cloneDeep(game.board));
@@ -456,7 +456,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
             const move = allMoves[i];
             const newGame = getNewGameInstance(game);
             newGame.movePiece(move.from, move.to);
-            const childNode = aiPlayer(newGame, depth - 1, alpha, beta, false);
+            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, false);
             currentNode.addChild(childNode);
             const evaluation = childNode.value.evaluation;
             if (evaluation > maxEval) {
@@ -482,7 +482,7 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
             const move = allMoves[i];
             const newGame = getNewGameInstance(game);
             newGame.movePiece(move.from, move.to);
-            const childNode = aiPlayer(newGame, depth - 1, alpha, beta, true);
+            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, true);
             currentNode.addChild(childNode);
             const evaluation = childNode.value.evaluation;
             if (evaluation < minEval) {
@@ -503,6 +503,6 @@ const aiPlayer = (game, depth, alpha, beta, maximizingPlayer) => {
 };
 
 export const playAi = (game, depth) => {
-    const gameTree = aiPlayer(game, depth, -Infinity, Infinity, true);
+    const gameTree = findBestMoveByAlphaBeta(game, depth, -Infinity, Infinity, true);
     return gameTree;
 };
