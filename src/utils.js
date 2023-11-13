@@ -8,7 +8,7 @@ export const PlayerTypes = {
 export const Levels = {
     Easy: 1,
     Medium: 3,
-    Hard: 5,
+    Hard: 6,
 };
 
 export const Players = {
@@ -135,7 +135,7 @@ export class CheckersGame {
         currentPiece.isSelected = false;
         currentPiece.isKing = false;
 
-        this.killedPieces = this.killedPieces.concat(killedPieces);
+        this.killedPieces = this.killedPieces.concat(killedPieces);        
         this.selectedPiece = null;
         this.updateWinner();
         this.turn = CheckersGame.getOpponent(this.turn);
@@ -502,24 +502,27 @@ const findBestMoveByAlphaBeta = (game, depth, alpha, beta, maximizingPlayer) => 
     }
 };
 
-const findBestMoveByMiniMax = (game, depth, alpha, beta, maximizingPlayer) => {
+const findBestMoveByMinimax = (game, depth, maximizingPlayer) => {
     if (depth === 0 || game.isEnd()) {
         const evaluation = evaluateGame(game);
         return new TreeNode({ evaluation }, cloneDeep(game.board));
     }
 
+    const currentNode = new TreeNode({}, cloneDeep(game.board));
+    let bestMove = null;
+
     if (maximizingPlayer) {
-        const currentNode = new TreeNode({}, cloneDeep(game.board));
         let maxEval = -Infinity;
-        let bestMove = null;
         const allMoves = getAllPossibleMoves(game);
+
         for (let i = 0; i < allMoves.length; i++) {
             const move = allMoves[i];
             const newGame = getNewGameInstance(game);
             newGame.movePiece(move.from, move.to);
-            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, false);
+            const childNode = findBestMoveByMinimax(newGame, depth - 1, false);
             currentNode.addChild(childNode);
             const evaluation = childNode.value.evaluation;
+
             if (evaluation > maxEval) {
                 maxEval = evaluation;
                 bestMove = {
@@ -527,25 +530,21 @@ const findBestMoveByMiniMax = (game, depth, alpha, beta, maximizingPlayer) => {
                     newPosition: { ...move.to },
                 };
             }
-            alpha = Math.max(alpha, maxEval);
-            if (beta <= alpha) {
-                break;
-            }
         }
+
         currentNode.value = { evaluation: maxEval, bestMove };
-        return currentNode;
     } else {
-        const currentNode = new TreeNode({}, cloneDeep(game.board));
         let minEval = Infinity;
-        let bestMove = null;
         const allMoves = getAllPossibleMoves(game);
+
         for (let i = 0; i < allMoves.length; i++) {
             const move = allMoves[i];
             const newGame = getNewGameInstance(game);
             newGame.movePiece(move.from, move.to);
-            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, true);
+            const childNode = findBestMoveByMinimax(newGame, depth - 1, true);
             currentNode.addChild(childNode);
             const evaluation = childNode.value.evaluation;
+
             if (evaluation < minEval) {
                 minEval = evaluation;
                 bestMove = {
@@ -553,17 +552,15 @@ const findBestMoveByMiniMax = (game, depth, alpha, beta, maximizingPlayer) => {
                     newPosition: { ...move.to },
                 };
             }
-            beta = Math.min(beta, minEval);
-            if (beta <= alpha) {
-                break;
-            }
         }
+
         currentNode.value = { evaluation: minEval, bestMove };
-        return currentNode;
     }
+
+    return currentNode;
 };
 
-export const playAi = (game, depth) => {
-    const gameTree = findBestMoveByAlphaBeta(game, depth, -Infinity, Infinity, true);
+export const playAi = (alog, game, depth) => {
+    const gameTree = alog === Algos.AlphaBetaPruning ? findBestMoveByAlphaBeta(game, depth, -Infinity, Infinity, true) : findBestMoveByMinimax(game, depth, true);
     return gameTree;
 };

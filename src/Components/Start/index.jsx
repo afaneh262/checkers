@@ -42,6 +42,7 @@ const RadioGroup = ({ title, choices, selectedChoice, onChange }) => {
 
 const Start = ({ onStart }) => {
     const [forceJump, setForceJump] = useState(true);
+    const [renderBoardWithTree, setRenderBoardWithTree] = useState(true);
     const [selectedAlgo, setSelectedAlgo] = useState(Algos.AlphaBetaPruning);
     const [selectedLevel, setSelectedLevel] = useState(Levels.Medium);
     const [selectedPlayers, setSelectedPlayers] = useState([PlayerTypes.Human, PlayerTypes.Ai]);
@@ -152,6 +153,25 @@ const Start = ({ onStart }) => {
                             }}
                         />
                     </div>
+                    <div>
+                        <RadioGroup
+                            title={'Render Board with tree'}
+                            choices={[
+                                {
+                                    id: true,
+                                    name: 'Yes',
+                                },
+                                {
+                                    id: false,
+                                    name: 'No',
+                                },
+                            ]}
+                            selectedChoice={renderBoardWithTree}
+                            onChange={(newVal) => {
+                                setRenderBoardWithTree(newVal);
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
             <div
@@ -180,7 +200,8 @@ const Start = ({ onStart }) => {
                             },
                             initalPlayerToStart: InitalPlayerToStart,
                             forceJump: forceJump,
-                            alog: selectedAlgo
+                            alog: selectedAlgo,
+                            renderBoardWithTree: renderBoardWithTree,
                         });
                     }}
                 >

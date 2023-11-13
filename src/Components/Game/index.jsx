@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Tree from 'react-d3-tree';
 
-import {
-    PlayerTypes,
-    Players,
-    CheckersGame,
-    playAi,
-} from './../../utils';
+import { PlayerTypes, Players, CheckersGame, playAi } from './../../utils';
 
 import GameD3Tree from '../GameD3Tree';
 import PlayerWidget from '../PlayerWidget';
@@ -16,7 +11,12 @@ import './styles.scss';
 
 const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
     const [game, setGame] = useState(
-        () => new CheckersGame(gameConfig.players, gameConfig.initalPlayerToStart, gameConfig.forceJump),
+        () =>
+            new CheckersGame(
+                gameConfig.players,
+                gameConfig.initalPlayerToStart,
+                gameConfig.forceJump,
+            ),
     );
     const [player1Move, setPlayer1Move] = useState({});
     const [player2Move, setPlayer2Move] = useState({});
@@ -27,7 +27,7 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
 
     useEffect(() => {
         const init = () => {
-            const gameTree = playAi(game, gameConfig.level);
+            const gameTree = playAi(gameConfig.alog, game, gameConfig.level);
             const {
                 value: {
                     bestMove: { piece, newPosition },
@@ -159,21 +159,34 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                         data={isPlayer1TreeShown ? player1Tree : player2Tree}
                         orientation={'vertical'}
                         collapsible={true}
-                        nodeSize={{
-                            x: 200,
-                            y: 200,
+                        nodeSize={
+                            !gameConfig.renderBoardWithTree
+                                ? {
+                                    x: 50,
+                                    y: 50,
+                                }
+                                : {
+                                    x: 200,
+                                    y: 200,
+                                }
+                        }
+                        renderCustomNodeElement={({ nodeDatum, toggleNode }) => {
+                            return (
+                                <g>
+                                    {gameConfig.renderBoardWithTree ? (
+                                        <GameD3Tree
+                                            board={nodeDatum.board}
+                                            handleClick={toggleNode}
+                                        />
+                                    ) : (
+                                        <rect width="20" height="20" x="-10" onClick={toggleNode} />
+                                    )}
+                                    <text fill="black" strokeWidth="1" x="20" onClick={toggleNode}>
+                                        {nodeDatum.value.evaluation}
+                                    </text>
+                                </g>
+                            );
                         }}
-                        renderCustomNodeElement={({ nodeDatum, toggleNode }) => (
-                            <g>
-                                <GameD3Tree
-                                    board={nodeDatum.board}
-                                    handleClick={toggleNode}
-                                />
-                                <text fill="black" strokeWidth="1" x="20" onClick={toggleNode}>
-                                    {nodeDatum.value.evaluation}
-                                </text>
-                            </g>
-                        )}
                     />
                 </div>
             )}
