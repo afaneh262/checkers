@@ -28,7 +28,7 @@ export const PlayersNames = {
 
 export const Algos = {
     MiniMax: 'minimax',
-    AlphaBetaPruning: 'alpha_beta_pruning'
+    AlphaBetaPruning: 'alpha_beta_pruning',
 };
 
 export const InitalPlayerToStart = Players.Player1;
@@ -192,6 +192,10 @@ export class CheckersGame {
             }
         }
 
+        if(this.forceJump && possibleMoves.filter((entry) => entry.isJump).length > 0) {
+            possibleMoves = possibleMoves.filter((entry) => entry.isJump);
+        }
+
         return possibleMoves;
     }
 
@@ -204,13 +208,30 @@ export class CheckersGame {
                 if (owner === player) {
                     const pieceMoves = this.findPiecePossibleMoves(row, col);
                     if (pieceMoves.length > 0) {
-                        movablePieces.push({ row, col, moves: pieceMoves});
+                        movablePieces.push({ row, col, moves: pieceMoves });
                     }
                 }
             }
         }
 
-        return movablePieces;
+        //Check if force jump then we will filter all other possible moves and return the first one with jump
+        const jumpers = [];
+        if (this.forceJump) {
+            for (let i = 0; i < movablePieces.length; i++) {
+                const piece = movablePieces[i];
+                const indexOfJumppingMove = piece.moves.findIndex((move) => move.isJump);
+                if (indexOfJumppingMove > -1) {
+                    jumpers.push({
+                        row: piece.row,
+                        col: piece.col,
+                        moves: [{ ...piece.moves[indexOfJumppingMove] }],
+                    });
+                    break;
+                }
+            }
+        }
+
+        return this.forceJump && jumpers.length > 0 ? jumpers : movablePieces;
     }
 
     updateWinner() {

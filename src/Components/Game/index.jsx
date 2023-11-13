@@ -15,9 +15,8 @@ import Piece from '../Piece';
 import './styles.scss';
 
 const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
-    console.log({gameConfig});
     const [game, setGame] = useState(
-        () => new CheckersGame(gameConfig.players, gameConfig.initalPlayerToStart),
+        () => new CheckersGame(gameConfig.players, gameConfig.initalPlayerToStart, gameConfig.forceJump),
     );
     const [player1Move, setPlayer1Move] = useState({});
     const [player2Move, setPlayer2Move] = useState({});
@@ -47,7 +46,6 @@ const Game = ({ gameConfig, onStartNewGame, onGameEnded }) => {
                 setPlayer1Move({ piece, newPosition });
                 setPlayer1Tree(gameTree);
             } else if (game.turn === Players.Player1) {
-                console.log({ gameTree });
                 setPlayer2Move({ piece, newPosition });
                 setPlayer2Tree(gameTree);
             }
