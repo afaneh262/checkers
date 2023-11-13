@@ -502,6 +502,67 @@ const findBestMoveByAlphaBeta = (game, depth, alpha, beta, maximizingPlayer) => 
     }
 };
 
+const findBestMoveByMiniMax = (game, depth, alpha, beta, maximizingPlayer) => {
+    if (depth === 0 || game.isEnd()) {
+        const evaluation = evaluateGame(game);
+        return new TreeNode({ evaluation }, cloneDeep(game.board));
+    }
+
+    if (maximizingPlayer) {
+        const currentNode = new TreeNode({}, cloneDeep(game.board));
+        let maxEval = -Infinity;
+        let bestMove = null;
+        const allMoves = getAllPossibleMoves(game);
+        for (let i = 0; i < allMoves.length; i++) {
+            const move = allMoves[i];
+            const newGame = getNewGameInstance(game);
+            newGame.movePiece(move.from, move.to);
+            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, false);
+            currentNode.addChild(childNode);
+            const evaluation = childNode.value.evaluation;
+            if (evaluation > maxEval) {
+                maxEval = evaluation;
+                bestMove = {
+                    piece: { ...move.from },
+                    newPosition: { ...move.to },
+                };
+            }
+            alpha = Math.max(alpha, maxEval);
+            if (beta <= alpha) {
+                break;
+            }
+        }
+        currentNode.value = { evaluation: maxEval, bestMove };
+        return currentNode;
+    } else {
+        const currentNode = new TreeNode({}, cloneDeep(game.board));
+        let minEval = Infinity;
+        let bestMove = null;
+        const allMoves = getAllPossibleMoves(game);
+        for (let i = 0; i < allMoves.length; i++) {
+            const move = allMoves[i];
+            const newGame = getNewGameInstance(game);
+            newGame.movePiece(move.from, move.to);
+            const childNode = findBestMoveByAlphaBeta(newGame, depth - 1, alpha, beta, true);
+            currentNode.addChild(childNode);
+            const evaluation = childNode.value.evaluation;
+            if (evaluation < minEval) {
+                minEval = evaluation;
+                bestMove = {
+                    piece: { ...move.from },
+                    newPosition: { ...move.to },
+                };
+            }
+            beta = Math.min(beta, minEval);
+            if (beta <= alpha) {
+                break;
+            }
+        }
+        currentNode.value = { evaluation: minEval, bestMove };
+        return currentNode;
+    }
+};
+
 export const playAi = (game, depth) => {
     const gameTree = findBestMoveByAlphaBeta(game, depth, -Infinity, Infinity, true);
     return gameTree;
